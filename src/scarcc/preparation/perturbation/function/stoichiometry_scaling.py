@@ -77,7 +77,7 @@ def alter_Sij(model: "Model", alphas: float = 1, genes: str = 'folA', ko=False):
     list of reaction ids that are regulated by the target genes
     """
     # get objective value for corresponding alpha
-    alphas= convert_arg_to_list(alphas[0]) if isinstance(alpha, list) and len(alphas)==1 else convert_arg_to_list(alphas)  # unlist one layer from zip comprehension 
+    alphas= convert_arg_to_list(alphas[0]) if isinstance(alphas, list) and len(alphas)==1 else convert_arg_to_list(alphas)  # unlist one layer from zip comprehension 
     genes = convert_arg_to_list(genes)
     
     genes_dict = {gene: alpha for gene, alpha in zip(genes, alphas)}

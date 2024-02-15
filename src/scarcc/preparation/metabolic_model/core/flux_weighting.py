@@ -18,11 +18,13 @@ def weight_carbon_byproduct(E0, S0, all_components, ac_scale=None, gal_scale=Non
         query_gal = ['gal_p','gal_c']
         if gal_scale > 1:
             gal_scale = -1*(1-1/gal_scale) 
-        for i, rxn in enumerate(get_links_component(E0, query_gal, all_components, id_only=False, is_prod_only=True)): # ['GALt2pp', 'GAL1PPpp', 'GALabcpp', 'GALS3', 'LACZpp', 'GALM2pp', 'LACZ'] are scaled
+        
+        rxns_to_scale = get_links_component(E0, query_gal, all_components, id_only=False, is_prod_only=True) # ['GALt2pp', 'GAL1PPpp', 'GALabcpp', 'GALS3', 'LACZpp', 'GALM2pp', 'LACZ'] are scaled
+        logger.debug('reactions in gal scaled: %s', rxns_to_scale)
+        for rxn in rxns_to_scale:
             # TODO: only scale LACZpp is desirable, make gal secretion similar to knockout
             metab_to_scale = rxn.metabolites
             rxn.add_metabolites({k:v*gal_scale for k,v in metab_to_scale.items()})
-            logger.debug('%s th reaction in gal flux weighted: \n %s', i, str(rxn))
     # E0.reactions.GALtex.knock_out()
     
     if ac_scale is not None: # flux do not count in minflux
