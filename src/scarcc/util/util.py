@@ -1,3 +1,6 @@
+import pandas as pd
+import re
+ 
 def convert_arg_to_list(arg):
     """Converts argument to list if it is not already a list, tuple or set.
     
@@ -9,7 +12,7 @@ def convert_arg_to_list(arg):
     -------
     list[arg] or arg in original format
     """
-    if type(arg) in [pd.Series, pd.Index]:
+    if isinstance(arg, (pd.Series, pd.Index)):
         arg = list(arg) 
     elif type(arg) not in [list, tuple, set]:
         arg = [arg] # differ from list(arg) -> conversion of str
@@ -36,4 +39,5 @@ def rename_columns(df):
     return(df.columns)
 
 def remove_Zero_col(df): # extend N differ than 0 
+    """Remove columns with all zero entries"""
     return(df.loc[:, ((df !=0) & (df.notnull())).any(axis=0)]) # ignore NA entry 

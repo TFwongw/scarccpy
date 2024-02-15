@@ -2,7 +2,7 @@
 import re
 import cobra
 from typing import Union, List, Dict
-# from scarcc.util.util import convert_arg_to_list
+from scarcc.util import convert_arg_to_list
 
 def get_gene_id(model: "cobra.Model", gene_name: str) -> str:
     """Query the id of the gene
@@ -13,10 +13,10 @@ def get_gene_id(model: "cobra.Model", gene_name: str) -> str:
     gene_name: str
     """
     for i in model.genes:
-        if(i.name == gene_name):
-            return(i.id)
+        if i.name == gene_name:
+            return i.id
 
-def get_all_components(E0, S0) -> Dict[str, Dict[str, List]]: 
+def get_all_components(E0, S0) -> Dict[str, Dict[str, List]]:
     """Returns all the components of the model
     
     Parameters
@@ -26,7 +26,7 @@ def get_all_components(E0, S0) -> Dict[str, Dict[str, List]]:
 
     Returns
     -------
-     Structured Dictionary:
+    Structured Dictionary:
         all_components = {'metabolites': {'E0': [met1, met2, ...], 'S0': [met1, met2, ...]},
                         'genes': {'E0': [gene1, gene2, ...], 'S0': [gene1, gene2, ...]}, 
                         'reactions': {'E0': [rxn1, rxn2, ...], 'S0': [rxn1, rxn2, ...}}
@@ -38,8 +38,8 @@ def get_all_components(E0, S0) -> Dict[str, Dict[str, List]]:
     }
     all_genes = {
         model.id: 
-        [gene.name for gene in model.genes if type(gene) != str]
-        for model in [E0, S0]
+            [gene.name for gene in model.genes if not isinstance(gene, str)]
+            for model in [E0, S0]
     }
 
     all_reactions = {
@@ -63,7 +63,7 @@ def substrate_only(rxn: "Reaction", met: Union["Metabolite" , str]) -> bool:
     -------
     bool
     """
-    return rxn.lower_bound>=0 and met in rxn.reactants        
+    return rxn.lower_bound>=0 and met in rxn.reactants  
 
 def substrate_any(rxn: "Reaction", met: Union["Metabolite" , str]):
     """Returns True if the metabolite can be a substrate in the reaction"""
@@ -71,7 +71,7 @@ def substrate_any(rxn: "Reaction", met: Union["Metabolite" , str]):
 
 def product_only(rxn: "Reaction", met: Union["Metabolite" , str]):
     """Returns True if the metabolite is a product but not substrate in the reaction
-       Excludes secretion fluxes"""
+    Excludes secretion fluxes"""
     if re.search(r"_e$", rxn.id): # secretion flux
         return True
     return (rxn.lower_bound>=0 and met in rxn.products) or (rxn.upper_bound<=0 and met in rxn.reactants)   

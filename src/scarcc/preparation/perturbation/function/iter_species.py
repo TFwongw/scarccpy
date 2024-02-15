@@ -1,4 +1,5 @@
 def iter_species(models,f,*args,**kwargs): 
+    """Factory for passing extra_objects iterate with model into functions."""
     def simple_iter():
         for model in models:
             r_object.append(f(model,*args,**kwargs))
