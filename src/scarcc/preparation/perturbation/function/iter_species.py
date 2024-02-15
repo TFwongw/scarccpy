@@ -1,3 +1,4 @@
+"""iterate items to passinto function"""
 def iter_species(models,f,*args,**kwargs): 
     """Factory for passing extra_objects iterate with model into functions."""
     def simple_iter():
@@ -13,4 +14,4 @@ def iter_species(models,f,*args,**kwargs):
     iter_fun = coupled_iter if isinstance(models, zip) else simple_iter
     iter_fun()
 
-    return(r_object) 
+    return(r_object)
