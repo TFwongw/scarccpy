@@ -25,11 +25,11 @@ class AlphaFinderConfig:
     @staticmethod
     def get_next_alpha(search_alpha, alpha_lb, alpha_ub, is_new_ub, exp_leap=2, is_monoculture=True):
         # print('gna', search_alpha, alpha_lb, alpha_ub, is_new_ub)
-        if (is_new_ub == False):  # raise lb, search higher alpha
+        if is_new_ub is False:  # raise lb, search higher alpha
             alpha_lb = search_alpha
             # if ((search_alpha*exp_leap <alpha_ub) and is_monoculture): # exponential search(large step)
             # if ((alpha_ub > 1e4) and (alpha_lb> 1e3)): # when alpha ub not get updated, exponential search(large step)
-            if (search_alpha*exp_leap <alpha_ub and is_new_ub == False):
+            if (search_alpha*exp_leap <alpha_ub and is_new_ub is False):
                 search_alpha *= exp_leap
             else: # search alpha not get updated, then binary search
                 search_alpha = (search_alpha+alpha_ub)/2  
@@ -37,7 +37,6 @@ class AlphaFinderConfig:
             # start binary search, in (alpha_lb, search_alpha)
             alpha_ub = search_alpha
             search_alpha = max((search_alpha+alpha_lb)/2, 1+1e-5) # terminate at 1+1e-5
-        # print(search_alpha, alpha_lb, alpha_ub)
         return search_alpha, alpha_lb, alpha_ub
     
     @staticmethod
@@ -101,9 +100,4 @@ class AlphaFinderConfig:
         
         return self.out_fun()
 
-potential_genes = [
-    'glyA', 'gltA', 'tktA', 'dapF', 'dapB', 'acnB', 'pgk', 'talB', 'mrcA', 'pyrE', 'dapD', 'pfkA', 'gdhA', 'folA', 'mrdA', 'thrB',
-    'dapA', 'serC', 'argD', 'thrC', 'aceF', 'pykF', 'dadX', 'folC', 'pyrD', 'trpA', 'serB', 'fbp', 'eno', 'pgi', 'pheA',
-    'gcvH', 'gnd', 'murA', 'aroA', 'guaB', 'glnA', 'yrbG', 'folP', 'purU', 'serA', 'gltD', 'purT', 'ackA', 'purN', 'rffG',
-    'gapA'
-]
+    

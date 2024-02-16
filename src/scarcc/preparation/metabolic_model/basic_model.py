@@ -4,8 +4,10 @@ from dataclasses import dataclass
 from typing import Any, Dict
 import itertools
 import logging
+import os
 
 import cobra
+
 
 # from .core.medium import initialize_medium, change_medium
 # from .core.component import get_all_components
@@ -40,6 +42,7 @@ class BasicModel:
     
     E0: cobra.Model = None
     S0: cobra.Model = None
+    model_directory: str = '../models'
     all_components: Dict[str, Any] = None
     E_carbon_byproduct_reuptake: bool = True
     flux_weighting: bool = None
@@ -80,8 +83,8 @@ class BasicModel:
     def load_ES_models(self):
         """Load E0 and S0 models with customized """
         if self.E0 is None:
-            self.E0 = cobra.io.read_sbml_model("../models/iML1515_E0.xml")
-            self.S0 = cobra.io.read_sbml_model("../models/STM_v1_0_S0.xml")
+            self.E0 = cobra.io.read_sbml_model(os.path.join(self.model_directory, "iML1515_E0.xml"))
+            self.S0 = cobra.io.read_sbml_model(os.path.join(self.model_directory, "STM_v1_0_S0.xml"))
             self.E0.id, self.S0.id = 'E0', 'S0'
         if self.E0 is None or self.S0 is None:
             logging.warning('%s and %s models are not loaded', self.E0.id, self.S0.id)
