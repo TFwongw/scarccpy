@@ -28,21 +28,21 @@ To ensure that the Python interpreter can find and import the `scarcc` package, 
 
 ### For Linux and macOS
 
-Open a terminal window and navigate to the root of the `scarcc` project. Then, you can temporarily set your `PYTHONPATH` by running:
+Open a terminal window and navigate to the root of the `scarccpy` project. Then, you can temporarily set your `PYTHONPATH` by running:
 
 ```bash
-export PYTHONPATH="${PYTHONPATH}:/path/to/scarcc/src"
+export PYTHONPATH="${PYTHONPATH}:/path/to/scarccpy/src"
 ```
 
-To make this change permanent, you can add the export command to your shell's startup script, such as `.bashrc` or `.bash_profile` for Bash, or `.zshrc` for Zsh, replacing `/path/to/scarcc/src` with the actual path to the `scarcc` source directory.
+To make this change permanent, you can add the export command to your shell's startup script, such as `.bashrc` or `.bash_profile` for Bash, or `.zshrc` for Zsh, replacing `/path/to/scarccpy/src` with the actual path to the `scarccpy` source directory.
 
 For example, if you're using Bash, you could add the following line to the end of your `.bashrc`:
 
 ```bash
-echo 'export PYTHONPATH="${PYTHONPATH}:/path/to/scarcc/src"' >> ~/.bashrc
+echo 'export PYTHONPATH="${PYTHONPATH}:/path/to/scarccpy/src"' >> ~/.bashrc
 ```
 
-Don't forget to replace `/path/to/scarcc/src` with the actual path to the directory. Then, source your `.bashrc` file to apply the changes:
+Don't forget to replace `/path/to/scarccpy/src` with the actual path to the directory. Then, source your `.bashrc` file to apply the changes:
 
 ```bash
 source ~/.bashrc
@@ -55,16 +55,16 @@ On Windows, you can set the `PYTHONPATH` environment variable through the System
 1. Search for "Environment Variables" in your Windows search and select "Edit the system environment variables".
 2. In the System Properties window, click on the "Environment Variables…" button.
 3. In the Environment Variables window, under the "System variables" section, click on the "New…" button to create a new environment variable.
-4. Enter `PYTHONPATH` as the variable name and the full path to the `scarcc/src` directory as the variable value.
+4. Enter `PYTHONPATH` as the variable name and the full path to the `scarccpy/src` directory as the variable value.
 5. Click OK to close each window.
 
 Alternatively, you can set the `PYTHONPATH` in a Command Prompt or PowerShell session temporarily by running:
 
 ```cmd
-set PYTHONPATH=%PYTHONPATH%;C:\path\to\scarcc\src
+set PYTHONPATH=%PYTHONPATH%;C:\path\to\scarccpy\src
 ```
 
-Make sure you replace `C:\path\to\scarcc\src` with the actual path to the `scarcc` source directory on your system.
+Make sure you replace `C:\path\to\scarccpy\src` with the actual path to the `scarccpy` source directory on your system.
 
 ### Verifying the Setup
 
@@ -81,7 +81,7 @@ If you do not encounter any import errors, then you have successfully added the 
 
 ## Running the Script
 
-To run the script, navigate to the project directory and run the following command:
+To run the script, navigate to the project scarccpy\src directory and run the following command:
 
 ```
 python generate_alpha_table.py
