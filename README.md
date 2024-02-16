@@ -1,7 +1,27 @@
 
-# Simulation of Combined Antibiotics in Cross-feeding Communities(SCARCC)
+# Simulation of Combined Antibiotics in Cross-feeding Communities (SCARCC)
 
 ---
+
+## Prerequisites
+
+- [Python 3.8](https://www.python.org/downloads/) installed
+- Optional: [Git](https://git-scm.com/downloads) installed
+
+
+## Repository cloning
+
+1. Clone the repository using either of the following methods:
+    - **Option 1:** Download the repository as a ZIP file:
+        - Click on the green "Code" button in the repository.
+        - Select "Download ZIP".
+        - Extract the downloaded ZIP file to your desired location.
+
+    - **Option 2:** Use Git to clone the repository:
+        ```shell
+        git clone https://github.com/TFwongw/scarccpy.git
+        ```
+
 ## Setting Up Your Environment
 
 To ensure that the Python interpreter can find and import the `scarcc` package, you need to add the source directory to your `PYTHONPATH`. Follow the instructions below specific to your operating system.
@@ -59,7 +79,22 @@ If you do not encounter any import errors, then you have successfully added the 
 
 ---
 
+## Running the Script
 
+To run the script, navigate to the project directory and run the following command:
+
+```
+python generate_alpha_table.py
+python sim_COMETS.py
+```
+
+## Project Structure
+
+Here's a high level overview of the project's structure:
+
+---
+
+```
 scarccpy
 ├─ .vscode
 │  ├─ PythonImportHelper-v2-Completion.json
