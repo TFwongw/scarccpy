@@ -1,4 +1,8 @@
+apply-gitignore = !git ls-files -ci --exclude-standard -z | xargs -0 git rm --cached
+
 Data/
+
+**/desktop.ini
 
 # Python specific
 **/__pycache__/
