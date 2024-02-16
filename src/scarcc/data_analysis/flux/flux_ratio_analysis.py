@@ -134,14 +134,14 @@ def get_antagonistic_df(syn_df):
     antagonistic_list = syn_df.loc[syn_df['P_O']<0].query("P_O<-0.01").index 
     # ? func get pwy col
     potential_pwy = (gene_combo_pathway
-                                      .loc[antagonistic_list,'Pathway']
-                                      .str.split(' \+ ') # series string need \+
-                                      .apply(lambda x: sorted(x))) 
+                    .loc[antagonistic_list,'Pathway']
+                    .str.split(' \+ ') # series string need \+
+                    .apply(lambda x: sorted(x))) 
     return pd.DataFrame(potential_pwy)
 
 def remove_nan_from(x: pd.Series):
     return x.apply(lambda x: sorted(list(itertools.compress(x,[ele not in [None, np.nan] for ele in x]))))
-  
+
 def get_p_o_df(E0, S0, gr_DG):
     single_pathway_df = pd.read_csv('./Data/single_pathway_df.csv')
     gcomb_single_pathway_df = single_pathway_df.query('XG=="DG"') # select only DG
@@ -181,6 +181,6 @@ def get_full_df(desired_cycle, p_o_full, additional_df_list, Species='E0'): # Mi
         if 'Species' in next_df:
             next_df = next_df.query('Species== @Species')
         merged_df = (set_GI_SP_as_MI(merged_df)
-                     .join(set_GI_SP_as_MI(next_df), how='left')) # left join->DG only
+                    .join(set_GI_SP_as_MI(next_df), how='left')) # left join->DG only
         # inner_join SG info from desired cycle & alpha & flux
     return merged_df.reset_index(level='Species')

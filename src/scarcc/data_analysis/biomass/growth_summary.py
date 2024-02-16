@@ -1,15 +1,19 @@
-import numpy as np
-import pandas as pd
-from setup import convert_arg_to_list
-from flux_snapshot import set_GI_SP_as_MI
+"""Summary statistics from biomass growth record"""
 
-def get_Biomass_df(files):
+import pandas as pd
+from typing import List, Union
+from scarcc.util import convert_arg_to_list
+from ..flux.flux_snapshot import set_GI_SP_as_MI
+
+def get_Biomass_df(file_path_list: Union[str, List]):
+    """read biomass_df from file"""
     return pd.concat(
             [pd.read_csv(file, index_col='cycle')
-             for file in convert_arg_to_list(files)]
+            for file in convert_arg_to_list(file_path_list)]
         ,axis=1)
 
 def get_XG_cycle_from(desired_cycle):
+    """separate SG and DG cycle from desired_cycle"""
     if len(desired_cycle.index[-1].split('.')) <=2:
         SG_cycle = desired_cycle.loc[[len(ele.split('.')) ==1 for ele in desired_cycle.index]]
         DG_cycle = desired_cycle.loc[[len(ele.split('.')) ==2 for ele in desired_cycle.index]]
@@ -20,25 +24,67 @@ def get_XG_cycle_from(desired_cycle):
     DG_cycle.index.name='DG'
     SG_cycle.columns.name=None
     DG_cycle.columns.name=None
-    return SG_cycle, DG_cycle    
+    return SG_cycle, DG_cycle
 
 def search_gr_cycle_with_biomass(df_search, biomass_values):
-    return [df_search[df_search >= biomass_value].idxmin() 
+    """search for cycle with biomass value
+    biomass value at half maximum represents middle of exponential phase
+    
+    Parameters
+    ----------
+    df_search: pd.Series
+        biomass record
+    biomass_values: list
+        biomass values to search
+
+    Returns
+    -------
+    list of boolean if biomass record is larger than queried biomass value
+    """
+    return [df_search[df_search >= biomass_value].idxmin()
                 for biomass_value in list(biomass_values)]
 
-def get_maximum_growth_cycle(desired_BM):
-    c_max_gr = desired_BM.iloc[1]+ (desired_BM.iloc[-1] - desired_BM.iloc[1])/2
-    bool_growing = ((desired_BM.iloc[-1]-desired_BM.iloc[-5])/desired_BM.iloc[-1]).apply(lambda x: x > 1e-10)
+def get_maximum_growth_cycle(desired_biomass):
+    """get summary statistics form biomass record
+    
+    Parameters
+    ----------
+    desired_biomass: pd.DataFrame
+        biomass record
+        
+    Returns
+    -------
+    c_max_gr: cycle at middle of exponential phase
+    start: growth start cycle
+    end: growth end cycle
+    bool_growing: boolean if growing, cell not reach stationary phase
+    """
+    c_max_gr = desired_biomass.iloc[1]+ (desired_biomass.iloc[-1] - desired_biomass.iloc[1])/2
+    bool_growing = ((desired_biomass.iloc[-1]-desired_biomass.iloc[-5])/desired_biomass.iloc[-1]).apply(lambda x: x > 1e-10)
     for k, bool_grow in bool_growing.items():
         if bool_grow:
-            c_max_gr[k] = desired_BM[k].iloc[-6]
-    biomass_diff = (desired_BM.iloc[-1]-desired_BM.iloc[0])
-    start = desired_BM.iloc[0] + biomass_diff*0.1
-    end = desired_BM.iloc[0] + biomass_diff*0.9
+            c_max_gr[k] = desired_biomass[k].iloc[-6]
+    biomass_diff = (desired_biomass.iloc[-1]-desired_biomass.iloc[0])
+    start = desired_biomass.iloc[0] + biomass_diff*0.1
+    end = desired_biomass.iloc[0] + biomass_diff*0.9
     return c_max_gr, start, end, bool_growing
 
-def get_desired_cycle(Biomass_df, log_step=5):
-    def correct_cycle(cycle): # 
+def get_desired_cycle(biomass_df, log_step=5):
+    """get desired growth cycle from biomass record
+    
+    Parameters
+    ----------
+    biomass_df: pd.DataFrame
+        biomass record
+    log_step: int
+        log step of flux record
+        
+    Returns
+    -------
+    desired_cycle: pd.DataFrame
+        summary statistics from biomass record
+    """
+    def correct_cycle(cycle): # round to nearest available flux log time point
         if cycle < log_step:
             return log_step
         return round(cycle / log_step) * log_step
@@ -53,19 +99,18 @@ def get_desired_cycle(Biomass_df, log_step=5):
         if len(items[0]) > 3:
             columns.extend(['alpha_lv_pairs'])
         return pd.DataFrame(items.tolist(), index=df.index, columns=columns)
-    desired_biomass_df = pd.DataFrame(get_maximum_growth_cycle(Biomass_df), index=['c_max_gr', 'start', 'end', 'bool_growing'])
+    desired_biomass_df = pd.DataFrame(get_maximum_growth_cycle(biomass_df), index=['c_max_gr', 'start', 'end', 'bool_growing'])
     
     desired_cycle = (desired_biomass_df.iloc[:-1]
                 .apply(lambda x: 
-                        search_gr_cycle_with_biomass(Biomass_df.loc[:,x.name],x))
+                        search_gr_cycle_with_biomass(biomass_df.loc[:,x.name],x))
                 .T)
     desired_cycle['bool_growing'] = desired_biomass_df.T.bool_growing
     desired_cycle['cycle_max_gr'] = desired_cycle['c_max_gr'].apply(correct_cycle) # -> cycle_max_gr
     desired_cycle['growth_phase'] = desired_cycle[['start', 'end']].values.tolist()
     desired_cycle['growth_phase_length'] = get_growth_phase_length()
-    desired_cycle['end_cycle'] = Biomass_df.index[-1]//5*5
+    desired_cycle['end_cycle'] = biomass_df.index[-1]//5*5
     desired_cycle = desired_cycle.join(split_index_to_cols(desired_cycle))
-#     .query('culture=="coculture"')
     if len(desired_cycle.Gene_inhibition.unique()) >1:
         desired_cycle = desired_cycle.set_index('Gene_inhibition')[['cycle_max_gr', 'bool_growing', 'growth_phase','growth_phase_length', 'Species','culture','end_cycle']]
     else:
@@ -74,63 +119,44 @@ def get_desired_cycle(Biomass_df, log_step=5):
 
     return desired_cycle
 
-# BM to merge with p_o to form full flux dict
-def get_BM_bin(BM): # separate S0 E0 bin, combine again
-    sub_BM = BM.pivot(columns='Species', values='Biomass') #merge gene and species
-    sub_BM['S0_BM_bin'] =  pd.cut(sub_BM['S0'], [-1,.001,.0025,1], labels = ['Low', 'Medium','High'])
-    sub_BM['E0_BM_bin'] =  pd.cut(sub_BM['E0'], [-1,.001,.0065,1], labels = ['Low', 'Medium','High'])
-    return sub_BM.melt(value_vars=['S0_BM_bin','S0_BM_bin'],value_name='BM_bin',ignore_index=False).BM_bin
-
-def get_end_BM(Biomass_df):    
-    def get_species_frac_binned(end_BM):
-        stable_species_frac = end_BM.query('Species=="E0"').reset_index('Species', drop=True)['BM_consortia_frac']
+def get_end_BM(biomass_df):    
+    """retrieve biomass at end cycle"""
+    def get_species_frac_binned(end_biomass): # derive species relative abundance in media
+        stable_species_frac = end_biomass.query('Species=="E0"').reset_index('Species', drop=True)['BM_consortia_frac']
 
         labels = ['S', 'slight E', 'E']
         bins = [0, 0.5, 0.7, 1]
         stable_species_frac_binned = pd.cut(stable_species_frac, bins=bins, labels=labels)
-        stable_species_frac_binned
         return stable_species_frac_binned
     
-    BM = pd.DataFrame(Biomass_df.loc[:, [col for col in Biomass_df.columns if 'coculture' in col]].iloc[-1]            )
-    BM.columns = ['Biomass']
-    BM['Species'] = list(pd.Series(BM.index).apply(lambda x: str(x).split('_')[0]))
-    BM['Gene_inhibition'] = list(pd.Series(BM.index).apply(lambda x: str(x).split('_')[1]))
-    BM = BM.set_index(['Gene_inhibition'])
-    BM['Total_BM'] = BM.groupby('Gene_inhibition').Biomass.sum()
+    def add_to_end_biomass(end_biomass): # additional columns counting species relative population 
+        def get_ratio_and_std_col(model_id):
+            temp_df = separate_Species_df(end_biomass, model_id, inc_Species=True)
+            temp_df['BM_consortia_frac'] = temp_df.Biomass/temp_df.Total_BM
+            temp_df['standardized_BM'] = temp_df.Biomass/temp_df.loc['Normal', 'Biomass']
+            return temp_df
+        def separate_Species_df(df, model_id, inc_Species = False):
+            """separate species from df"""
+            def get_species_loc(model_id):
+                return list(temp_df.Species == model_id)
+            
+            if not isinstance(model_id, str):
+                model_id = model_id.id
+            df = df.loc[:,~df.columns.str.contains('Ndiff|ESdiff')]
+            temp_df = pd.concat([df['Species'],df.select_dtypes(include = ['float'])], axis=1)
+            result_df = temp_df.loc[get_species_loc(model_id)]
+            return result_df if inc_Species else result_df.drop('Species',axis=1)
+        return pd.concat([get_ratio_and_std_col('E0'), get_ratio_and_std_col('S0')]).set_index('Species', append=True).drop(['Total_BM', 'Biomass'], axis=1)
 
-    BM['Total_BM_bin'] = pd.cut(BM['Total_BM'], [-1,.004,.008,1], labels = ['Low', 'Medium','High'])
-    BM['BM_bin'] = get_BM_bin(BM)
-    
-    end_BM = set_GI_SP_as_MI(BM).join(set_GI_SP_as_MI(add_to_end_BM(BM)))
-    binned_col = get_species_frac_binned(end_BM)
-    end_BM = end_BM.merge(binned_col, left_index=True, right_index=True, suffixes=('', '_binned'))
-    end_BM['BM_consortia_frac_binned'] = end_BM['BM_consortia_frac_binned'].cat.add_categories(['No growth'])
-
-    end_BM.loc[end_BM.Biomass<1.01e-8,'BM_consortia_frac_binned'] = 'No growth'
-    
-    # lcts_used = .1-metab_end.lcts_e.fillna(0)
-    # end_BM = end_BM.join(lcts_used).rename(columns={'lcts_e': 'lcts_consumed'})
-    # end_BM['Standzrdized_Carbon_source_conversion_efficiency'] = end_BM.apply(lambda x: x.Total_BM/x.lcts_consumed,axis=1)
-    # end_BM['Standzrdized_Carbon_source_conversion_efficiency'] = end_BM.Standzrdized_Carbon_source_conversion_efficiency/end_BM.loc['Normal', 'Standzrdized_Carbon_source_conversion_efficiency'][0] # series of 2 element same value for E0, S0
-    return end_BM
-
-def separate_Species_df(df, model_id, inc_Species = False):
-    if not isinstance(model_id, str):
-        model_id = model_id.id
-    def get_species_loc(model_id):
-        return list(temp_df.Species == model_id)
-    df = df.loc[:,~df.columns.str.contains('Ndiff|ESdiff')]
-    temp_df = pd.concat([df['Species'],df.select_dtypes(include = ['float'])], axis=1)
-    result_df = temp_df.loc[get_species_loc(model_id)]
-    return result_df if inc_Species else result_df.drop('Species',axis=1)
-
-def add_to_end_BM(end_BM):
-    def get_ratioNstd_col(model_id):
-        temp_df = separate_Species_df(end_BM, model_id, inc_Species=True)
-#         temp_df[f'{model.id}_BM_ratio'] = temp_df.Biomass/temp_df.Total_BM
-#         temp_df[f'{model.id}_standardized_BM'] = temp_df.Biomass/temp_df.loc['Normal', 'Biomass']
-        temp_df[f'BM_consortia_frac'] = temp_df.Biomass/temp_df.Total_BM
-        temp_df[f'standardized_BM'] = temp_df.Biomass/temp_df.loc['Normal', 'Biomass']
-        return temp_df
-    return pd.concat([get_ratioNstd_col('E0'), get_ratioNstd_col('S0')]).set_index('Species', append=True).drop(['Total_BM', 'Biomass'], axis=1)
-
+    biomass = pd.DataFrame(biomass_df.loc[:, [col for col in biomass_df.columns if 'coculture' in col]].iloc[-1]            )
+    biomass.columns = ['Biomass']
+    biomass['Species'] = list(pd.Series(biomass.index).apply(lambda x: str(x).split('_')[0]))
+    biomass['Gene_inhibition'] = list(pd.Series(biomass.index).apply(lambda x: str(x).split('_')[1]))
+    biomass = biomass.set_index(['Gene_inhibition'])
+    biomass['Total_BM'] = biomass.groupby('Gene_inhibition').Biomass.sum()
+    end_biomass = set_GI_SP_as_MI(biomass).join(set_GI_SP_as_MI(add_to_end_biomass(biomass)))
+    binned_col = get_species_frac_binned(end_biomass)
+    end_biomass = end_biomass.merge(binned_col, left_index=True, right_index=True, suffixes=('', '_binned'))
+    end_biomass['BM_consortia_frac_binned'] = end_biomass['BM_consortia_frac_binned'].cat.add_categories(['No growth'])
+    end_biomass.loc[end_biomass.Biomass<1.01e-8,'BM_consortia_frac_binned'] = 'No growth'
+    return end_biomass
