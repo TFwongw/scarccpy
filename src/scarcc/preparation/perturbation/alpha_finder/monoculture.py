@@ -197,6 +197,11 @@ def get_single_div_obj_df(model, target_obj_val, first_n_gene=None, alpha_df = N
     return obj_div_df
 
 def get_div_obj_df(model_list, target_obj_val, potential_genes=potential_genes, precision=4):
+    """Get the objective value for each gene in each model in model_list
+    
+    Parameters
+    ----------
+    model_list """
     alpha_obj_df_list = iter_species(model_list, get_single_div_obj_df,
                             target_obj_val=target_obj_val, potential_genes=potential_genes, precision=precision)
     return pd.concat(alpha_obj_df_list, axis=1)
