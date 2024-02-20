@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass, field
 from typing import List
 import pandas as pd
@@ -10,7 +11,7 @@ from .alpha_finder import AlphaFinderConfig
 
 @dataclass(kw_only=True)
 class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
-    model: List 
+    model: List['cobra.Model']
     search_alpha : float
     current_gene : str
     target_obj_val : float = 0.5 
@@ -24,10 +25,9 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
     n_dir : str = ''
     opt_alpha_table: pd.DataFrame = field(default_factory=pd.DataFrame)
     nxt_alpha_table: pd.DataFrame = field(default_factory=pd.DataFrame)
-    ko_intercepted : None
+    ko_intercepted : None = None
     acceptance_threshold_lower : float = .95
     acceptance_threshold_upper : float = 1.05
-    exp_leap = None
     gr_Normal : float = None
     carbon_source_val : float = 5e-3
     add_nutrient_val : float = 10 # DO NOT set Met limiting in batch culture 
@@ -35,6 +35,8 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
     initial_pop : float = 1e-8
     p : None = None
     obj_style: str = 'MAX_OBJECTIVE_MIN_TOTAL'
+    data_path = None # replace ./Data/
+
     # add_nutrient_val : float = field(default_factory=[.08])
     
     def __post_init__(self):
@@ -79,7 +81,7 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
         
         coculture_biomass_df = full_df.iloc[:,[0]]
         if self.current_gene == 'Normal': 
-            coculture_biomass_df.to_csv(f'./Data/Normal_biomass_{str(self.carbon_source_val)}.csv')
+            coculture_biomass_df.to_csv(os.path.join(self.data_path, f'{Normal_biomass_str(self.carbon_source_val)}.csv'))
         
         coculture_biomass_df.columns = rename_columns(coculture_biomass_df)
         
@@ -282,7 +284,7 @@ def run_coculture_search_mp(potential_genes, filename, n_processor, **kwargs):
     def save_trace_biomass(trace_biomass):
         trace_biomass = pd.concat(trace_biomass,axis=1) # alpha_table
         trace_biomass.columns = rename_columns(trace_biomass)
-        trace_biomass.to_csv(f'./Data/biomass_{filename}.csv')
+        trace_biomass.to_csv(os.path.join(self.data_path, f'biomass_{filename}.csv'))
     
     result_list = list()
     with concurrent.futures.ProcessPoolExecutor(n_processor) as executor:
@@ -294,11 +296,11 @@ def run_coculture_search_mp(potential_genes, filename, n_processor, **kwargs):
     opt_alpha = pd.concat(opt_alpha_list) # alpha_table
         
     opt_alpha.columns = rename_columns(opt_alpha)
-    opt_alpha.to_csv(f'./Data/alpha_table_{filename}.csv')
+    opt_alpha.to_csv(os.path.join(self.data_path, f'alpha_table_{filename}.csv'))
     print(opt_alpha, result_dict_list)
     
     trace_dict = {k: v for d in result_dict_list for k, v in d.items()}
-    with open(f"./Data/trace_record_{filename}.json", "w") as outfile: 
+    with open(os.path.join(self.data_path, f"trace_record_{filename}.json", "w")) as outfile: 
         json.dump(trace_dict, outfile) 
         
     

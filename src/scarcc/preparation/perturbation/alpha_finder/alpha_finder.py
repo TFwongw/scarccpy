@@ -1,29 +1,49 @@
 from dataclasses import dataclass
 import pandas as pd
 from typing import List
+from abc import ABC, abstractmethod
+from typing import Union
 
 @dataclass(kw_only=True)
-class AlphaFinderConfig:
-    alpha_table = None
-    opt_df : pd.DataFrame = None # final output
+class AlphaFinderConfig(ABC):
+    # gene characteristic and records
+    current_gene: str = None
+    trace_obj_val: dict = None
+    is_growth_switch: bool = None
+    early_stop: bool = False
+    ko_intercepted: bool = False
+
+    # culture identification
+    is_monoculture: bool = None
+    model: Union["cobra.Model", List["cobra.Model"]] = None # single model for monoculture, list for coculture
+    ever_eval: bool =  False # initialize first run coculture
+
+    # alpha search related
+    target_obj_val : float = None
+    search_alpha: float = None
     alpha_lb : float = 1+1e-7
-    alpha_ub : float = 1e5 
-    found_alpha : bool = None
+    alpha_ub : float = 1e5
+    precision : int = 2 # precision of alpha
     is_new_ub : bool = None
     exp_leap : float = 2
-    target_obj_val : dict = None  
-    ko_intercepted : bool = None
-    ever_eval =  False
-    iter_max = 25
-    i_iter = 0    
+    found_alpha : bool = None
+    iter_max: int = 25
+    i_iter: int = 0
 
-    def __post_init__(self): # not post_inited
-        self.is_monoculture = None
-        self.out_fun = None
-        self.eval_alpha_fun = None
+    # evaluation alpha choice
+    acceptance_threshold_upper : float = None
+    acceptance_threshold_lower : float = None
     
+    @abstractmethod
+    def eval_alpha_fun(self):
+        pass
+
+    @abstractmethod
+    def out_fun(self):
+        pass
+
     @staticmethod
-    def get_next_alpha(search_alpha, alpha_lb, alpha_ub, is_new_ub, exp_leap=2, is_monoculture=True):
+    def get_next_alpha(search_alpha, alpha_lb, alpha_ub, is_new_ub, exp_leap=2):
         # print('gna', search_alpha, alpha_lb, alpha_ub, is_new_ub)
         if is_new_ub is False:  # raise lb, search higher alpha
             alpha_lb = search_alpha
@@ -91,13 +111,11 @@ class AlphaFinderConfig:
         
         while eval_continue() and not stop: 
             self.search_alpha, self.alpha_lb, self.alpha_ub = self.get_next_alpha(
-                self.search_alpha, self.alpha_lb, self.alpha_ub,  self.is_new_ub, 
-                self.exp_leap, is_monoculture=self.is_monoculture)
+                self.search_alpha, self.alpha_lb, self.alpha_ub, self.is_new_ub,
+                self.exp_leap)
             self.eval_alpha_fun()
             self.i_iter+=1
         if (not self.is_monoculture):
             print(f'Stopped at iter {self.i_iter}') if (self.i_iter<=self.iter_max or self.i_iter ==2) else print('Success search, end at: ', str(self.i_iter))
         
         return self.out_fun()
-
-    

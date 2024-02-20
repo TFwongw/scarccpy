@@ -20,23 +20,17 @@ potential_genes = [
 
 @dataclass(kw_only=True)
 class MonocultureAlphaFinder(AlphaFinderConfig):
-    model : str
-    search_alpha : float
-    current_gene : str
-    target_obj_val : float = .5
-    response_record = None # for iteratice uptate in checkerboard
-    opt_df : pd.DataFrame = None 
+    model : 'cobra.Model' # single cobra model
     exp_leap : int = 2
-    precision : int = 2 # precision of alpha
-    acceptance_threshold_upper : float = None
-    acceptance_threshold_lower : float = None
     trace_obj_val : List = field(default_factory=list)
-        
+    norm_obj_val : float = None # gr_Nomral in coculture case
+    response_record = None # for iteratice uptate in checkerboard
+    opt_df : pd.DataFrame = None
+
     def __post_init__(self):
-        super().__post_init__()
+        # super().__post_init__()
+
         self.is_monoculture = True
-        self.eval_alpha_fun = self.evaluate_alpha_from_biomass
-        self.out_fun = self.modify_opt_df
         if not self.acceptance_threshold_lower:
             self.acceptance_threshold_lower = .85
         if not self.acceptance_threshold_upper:
@@ -69,7 +63,7 @@ class MonocultureAlphaFinder(AlphaFinderConfig):
                 'target_abs_diff' : abs(obj_val - self.target_obj_val)}
         return is_lowest_abs_diff
 
-    def evaluate_alpha_from_biomass(self):
+    def eval_alpha_fun(self):
         # print(self.alpha_ub)
         _, obj_val, summary_df = Sij_biomass(self.model, self.search_alpha, self.current_gene)
         
@@ -91,7 +85,7 @@ class MonocultureAlphaFinder(AlphaFinderConfig):
         if (net_flux_req and obj_req) or (self.opt_df is None): # store only qualified alpha
             self.opt_df = summary_df
         
-    def modify_opt_df(self):
+    def out_fun(self):
         opt_df = self.opt_df
         opt_df['is_growth_switch'] = self.classify_growth_switch()
         logger.debug('Gene: %s with alpha %s and obj_val %s', self.current_gene, opt_df['div_opt_alpha'][0], opt_df[f'div_opt_obj_val'][0])
@@ -196,7 +190,7 @@ def get_single_div_obj_df(model, target_obj_val, first_n_gene=None, alpha_df = N
             obj_div_df = pd.concat([obj_div_df, temp_df.set_index('Gene_inhibition')],axis=0)
     return obj_div_df
 
-def get_div_obj_df(model_list, target_obj_val, potential_genes=potential_genes, precision=4):
+def get_div_obj_df(model_list, target_obj_val, potential_genes=potential_genes, precision=3, detailed_alpha_table=False):
     """Get the objective value for each gene in each model in model_list
     
     Parameters
@@ -204,4 +198,7 @@ def get_div_obj_df(model_list, target_obj_val, potential_genes=potential_genes, 
     model_list """
     alpha_obj_df_list = iter_species(model_list, get_single_div_obj_df,
                             target_obj_val=target_obj_val, potential_genes=potential_genes, precision=precision)
-    return pd.concat(alpha_obj_df_list, axis=1)
+    result_df = pd.concat(alpha_obj_df_list, axis=1)  
+    if detailed_alpha_table:
+        return result_df  
+    

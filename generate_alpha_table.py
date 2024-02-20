@@ -1,37 +1,41 @@
-import os
-# from scarcc.preparation.perturbation.alpha_finder import get_div_obj_df
+# import pandas as pd
 # from scarcc.preparation.metabolic_model import BasicModel
+# from scarcc.preparation.find_directory import find_directory
 
-def find_directory(start_directory, directory_name):
-    current_directory = os.path.abspath(start_directory)
+from importlib import reload
+import scarcc.preparation.perturbation.alpha_finder.monoculture
+reload(scarcc.preparation.perturbation.alpha_finder.monoculture)
 
-    while True:
-        directory_path = os.path.join(current_directory, directory_name)
-        if os.path.isdir(directory_path):
-            return directory_path
+import scarcc.preparation.perturbation.alpha_finder.alpha_finder
+reload(scarcc.preparation.perturbation.alpha_finder.alpha_finder)
+from scarcc.preparation.perturbation.alpha_finder.alpha_finder import AlphaFinderConfig
 
-        # Move up one level
-        current_directory = os.path.dirname(current_directory)
-
-        # Check if reached the root directory
-        if current_directory == os.path.dirname(current_directory):
-            print(f'Directory {directory_name} not exist, make directory at root')
-            os.makedirs(directory_name)
-
+from scarcc.preparation.perturbation.alpha_finder.monoculture import MonocultureAlphaFinder, get_div_obj_df
 # data_directory = find_directory(os.path.abspath(__file__), 'models')
-data_directory = find_directory(os.path.abspath(__file__), 'fodels')
-# E0, S0, all_components = BasicModel(model_directory=data_directory, flux_weighting=True).load_ES_models()
 
-# df_list = get_div_obj_df([S0], 0.4, potential_genes=['folA'])
-# print(df_list)
-# print('Script run without error')
+model_directory = find_directory('models', __file__)
+# data_directory = find_directory('Data', __file__)
+# alpha_table = pd.read_csv(os.path.join(data_directory, 'alpha_table_m1.csv'), index_col=0)
+# E0, S0, all_components = BasicModel(model_directory=model_directory, flux_weighting=True).load_ES_models() 
+df = get_div_obj_df([E0], target_obj_val=0.5, potential_genes=['folA'])
+df
+# AFC = AlphaFinderConfig(data_directory)
 
-# # make DATA directory
-# file = os.path.abspath(__file__)
-# data_directory = os.path.join(os.path.dirname(file), 'Data')
+# model = 1
+# search_alpha = 1
+# current_gene = 'folA'
+# target_obj_val = 0.5
+# precision = 2
+# acceptance_threshold_upper = 0.9
+# acceptance_threshold_lower = 0.3
+# # MAF = MonocultureAlphaFinder(model_list, 1, 'folA')
 
-
-# os.makedirs('models', exist_ok=True)
-print(os.path.abspath(__file__))
-print(data_directory)
+# AF = MonocultureAlphaFinder(model=model,
+#             search_alpha = search_alpha,
+#             current_gene = current_gene, 
+#             target_obj_val = target_obj_val, 
+#             exp_leap=3,
+#             precision=precision,
+#             acceptance_threshold_upper = acceptance_threshold_upper,
+#             acceptance_threshold_lower = acceptance_threshold_lower)
 
