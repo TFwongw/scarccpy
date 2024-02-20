@@ -1,12 +1,17 @@
 import os
+import json
+import numpy as np
+from scipy.optimize import curve_fit
+
 from dataclasses import dataclass, field
 from typing import List
 import pandas as pd
 import concurrent.futures
 
 
-from scarcc.preparation.perturbation import alter_Sij, iter_species
-from scarcc.util import convert_arg_to_list
+from scarcc.util import (convert_arg_to_list, rename_columns)
+from scarcc.data_analysis.biomass.growth_summary import get_desired_cycle
+from scarcc.sim_engine.simulation_workflow import get_BM_df
 from .alpha_finder import AlphaFinderConfig
 
 @dataclass(kw_only=True)
@@ -40,10 +45,6 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
     # add_nutrient_val : float = field(default_factory=[.08])
     
     def __post_init__(self):
-        super().__post_init__()
-        print(self.exp_leap)
-        # print(type(self.model[1]))
-
         self.is_monoculture = False
         self.eval_alpha_fun = self.evaluate_alpha_from_gr 
         self.get_alpha_use()
@@ -56,7 +57,6 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
         self.S0 = self.model[1]
         self.out_fun = self.out_opt_alpha_table
         self.calculate_gr_Normal()
-#         _ = self.calculate_gr_ko() # moved to eval_alpha
     
     def calculate_gr_Normal(self):
         if not self.gr_Normal:
@@ -75,13 +75,13 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
         
         # alpha_in_table = self.alpha_table.loc[self.current_gene, self.E0.id] # E0 col
         full_df, *_ =  get_BM_df(self.current_gene,n_dir=self.n_dir,alpha_table=self.alpha_table,
-                                E0=self.E0, S0=self.S0, mono=False, p=p, return_sim=True, ko=True, 
+                                E0=self.E0, S0=self.S0, mono=False, p=self.p, return_sim=True, ko=True, 
                                 carbon_source_val=self.carbon_source_val, add_nutrient_val=self.add_nutrient_val,
                                 initial_pop=self.initial_pop, obj_style=self.obj_style)
         
         coculture_biomass_df = full_df.iloc[:,[0]]
-        if self.current_gene == 'Normal': 
-            coculture_biomass_df.to_csv(os.path.join(self.data_path, f'{Normal_biomass_str(self.carbon_source_val)}.csv'))
+        if self.current_gene == 'Normal':
+            coculture_biomass_df.to_csv(os.path.join(self.data_path, f'Normal_biomass_{str(self.carbon_source_val)}.csv'))
         
         coculture_biomass_df.columns = rename_columns(coculture_biomass_df)
         
@@ -130,11 +130,11 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
     def generate_next_fixed_ratio_table(self):     
         multiplier = (self.search_alpha-1)/(self.alpha_use-1)
         nxt_alpha_table =  (self.alpha_table.loc[[self.current_gene]]-1)*multiplier + 1 # ratio offset by 1, minimum is alpha=1
-         # trace alpha table change and corresponding gr
+        # trace alpha table change and corresponding gr
         # self.trace_alpha_table.append(nxt_alpha_table.to_dict())
         self.nxt_alpha_table = nxt_alpha_table
         return nxt_alpha_table
-     
+
     def cal_fitted_gr(self, coculture_biomass_df):
         def logistic(x, saturation, growth_rate, inflection_point, initial_pop):
             return (saturation / (1 + np.exp(-growth_rate * (x - inflection_point)))) + initial_pop
@@ -146,7 +146,7 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
             growth_rate = 0
             return growth_rate
             
-        desired_cycle = get_desired_cycle(coculture_biomass_df, scale_diff=0.05) 
+        desired_cycle = get_desired_cycle(coculture_biomass_df, scale_diff=0.05)
         
         growth_phase = desired_cycle.loc[self.current_gene, 'growth_phase']
         bool_growing = desired_cycle.loc[self.current_gene, 'bool_growing']
@@ -246,16 +246,6 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
         
         
         if obj_req or (self.opt_df is None) or self.converge_alpha: # store only qualified alpha
-            # if self.opt_df is not None: # do not append the first 
-            #     pass
-            #     temp_df = pd.DataFrame.from_dict(
-            #         {self.current_gene :
-            #             {'converge_alpha' : self.converge_alpha,
-            #             'obj_found': self.obj_found,
-            #             'bool_gr_coculture_exceed_limit': bool_gr_coculture_exceed_limit,
-            #             'classify_growth_switch': self.is_growth_switch}}, 
-            #             orient='index')
-            # else: temp_df = pd.DataFrame()
             if self.opt_df is not None:
                 nxt_alpha_table['obj_req_satisfied'] = True
             self.opt_df = [full_df, nxt_alpha_table]
@@ -276,15 +266,14 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
 
 def coculture_search_job(**kwargs):    
     AF = CocultureAlphaFinder(**kwargs)
-    # return pd.DataFrame([]), {0:{0:0}}
     AF.calculate_gr_ko()
     return AF.find_feasible_alpha()
 
-def run_coculture_search_mp(potential_genes, filename, n_processor, **kwargs):
+def run_coculture_search_mp(potential_genes, data_path, filename, n_processor, **kwargs):
     def save_trace_biomass(trace_biomass):
         trace_biomass = pd.concat(trace_biomass,axis=1) # alpha_table
         trace_biomass.columns = rename_columns(trace_biomass)
-        trace_biomass.to_csv(os.path.join(self.data_path, f'biomass_{filename}.csv'))
+        trace_biomass.to_csv(os.path.join(data_path, f'biomass_{filename}.csv'))
     
     result_list = list()
     with concurrent.futures.ProcessPoolExecutor(n_processor) as executor:
@@ -296,14 +285,13 @@ def run_coculture_search_mp(potential_genes, filename, n_processor, **kwargs):
     opt_alpha = pd.concat(opt_alpha_list) # alpha_table
         
     opt_alpha.columns = rename_columns(opt_alpha)
-    opt_alpha.to_csv(os.path.join(self.data_path, f'alpha_table_{filename}.csv'))
+    opt_alpha.to_csv(os.path.join(data_path, f'alpha_table_{filename}.csv'))
     print(opt_alpha, result_dict_list)
     
     trace_dict = {k: v for d in result_dict_list for k, v in d.items()}
-    with open(os.path.join(self.data_path, f"trace_record_{filename}.json", "w")) as outfile: 
-        json.dump(trace_dict, outfile) 
-        
-    
+    with open(os.path.join(data_path, f"trace_record_{filename}.json", "w")) as outfile:
+        json.dump(trace_dict, outfile)
+
     save_trace_biomass(trace_biomass)
     print('finished alpha search')
     return opt_alpha_list, trace_dict
