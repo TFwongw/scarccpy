@@ -4,6 +4,10 @@ Data/
 
 **/desktop.ini
 
+# Sphinx documentation
+_build/
+.doctrees/
+
 # Python specific
 **/__pycache__/
 *.py[cod]
