@@ -44,13 +44,16 @@ def search_gr_cycle_with_biomass(df_search, biomass_values):
     return [df_search[df_search >= biomass_value].idxmin()
                 for biomass_value in list(biomass_values)]
 
-def get_maximum_growth_cycle(desired_biomass):
+def get_maximum_growth_cycle(desired_biomass, scale_biomass_diff=0.1):
     """get summary statistics form biomass record
     
     Parameters
     ----------
     desired_biomass: pd.DataFrame
         biomass record
+    scale_biomass_diff: float
+        scale for biomass difference(max-min) to account for noise, 
+        delayed start and advanced end cycle for exponential phase
         
     Returns
     -------
@@ -65,11 +68,11 @@ def get_maximum_growth_cycle(desired_biomass):
         if bool_grow:
             c_max_gr[k] = desired_biomass[k].iloc[-6]
     biomass_diff = (desired_biomass.iloc[-1]-desired_biomass.iloc[0])
-    start = desired_biomass.iloc[0] + biomass_diff*0.1
-    end = desired_biomass.iloc[0] + biomass_diff*0.9
+    start = desired_biomass.iloc[0] + biomass_diff*scale_biomass_diff
+    end = desired_biomass.iloc[0] + biomass_diff*(1-scale_biomass_diff)
     return c_max_gr, start, end, bool_growing
 
-def get_desired_cycle(biomass_df, log_step=5):
+def get_desired_cycle(biomass_df, log_step=5, scale_biomass_diff=0.1):
     """get desired growth cycle from biomass record
     
     Parameters
@@ -78,6 +81,8 @@ def get_desired_cycle(biomass_df, log_step=5):
         biomass record
     log_step: int
         log step of flux record
+    scale_biomass_diff: float
+        argument for get_maximum_growth_cycle, refined exponential phase
         
     Returns
     -------
@@ -99,7 +104,8 @@ def get_desired_cycle(biomass_df, log_step=5):
         if len(items[0]) > 3:
             columns.extend(['alpha_lv_pairs'])
         return pd.DataFrame(items.tolist(), index=df.index, columns=columns)
-    desired_biomass_df = pd.DataFrame(get_maximum_growth_cycle(biomass_df), index=['c_max_gr', 'start', 'end', 'bool_growing'])
+    desired_biomass_df = pd.DataFrame(get_maximum_growth_cycle(biomass_df, scale_biomass_diff=scale_biomass_diff)
+                                    , index=['c_max_gr', 'start', 'end', 'bool_growing'])
     
     desired_cycle = (desired_biomass_df.iloc[:-1]
                 .apply(lambda x: 

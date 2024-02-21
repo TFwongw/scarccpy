@@ -8,7 +8,6 @@ from typing import List
 import pandas as pd
 import concurrent.futures
 
-
 from scarcc.util import (convert_arg_to_list, rename_columns)
 from scarcc.data_analysis.biomass.growth_summary import get_desired_cycle
 from scarcc.sim_engine.simulation_workflow import get_BM_df
@@ -46,7 +45,7 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
     
     def __post_init__(self):
         self.is_monoculture = False
-        self.eval_alpha_fun = self.evaluate_alpha_from_gr 
+        self.eval_alpha_fun = self.eval_alpha_fun 
         self.get_alpha_use()
         self.E0 = [ele for ele in convert_arg_to_list(self.model) if ele.id == 'E0'][:1]
         # self.gr_Normal = 0.00064644123538125 # ?check effect of lcts conc changed in Div_COMETS
@@ -55,7 +54,7 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
             self.exp_leap = 1.3
         self.E0 = self.model[0]
         self.S0 = self.model[1]
-        self.out_fun = self.out_opt_alpha_table
+        self.out_fun = self.out_fun
         self.calculate_gr_Normal()
     
     def calculate_gr_Normal(self):
@@ -183,7 +182,7 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
         print('---GR, stdGR__:',gr, standardized_gr)
         return standardized_gr
     
-    def evaluate_alpha_from_gr(self, alpha_overwrite=None): # first, search alppha = alpha_table alpha
+    def eval_alpha_fun(self, alpha_overwrite=None): # first, search alppha = alpha_table alpha
         if self.ko_intercepted is None:
             _ = self.calculate_gr_ko() # also catch gr_ko ~ gr_Normal- Gene with nonessential reactions
         
@@ -253,7 +252,7 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
             self.opt_alpha_table = nxt_alpha_table
         return full_df 
     
-    def out_opt_alpha_table(self):
+    def out_fun(self):
         result = {}
         for i in range(len(self.trace_obj_val)):
             result[f'iter_{i+1}'] = {'obj_val': self.trace_obj_val[i], 'alpha_table': self.trace_alpha[i]}
