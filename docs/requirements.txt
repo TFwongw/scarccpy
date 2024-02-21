@@ -1,4 +1,4 @@
-Sphinx
+Sphinx>=5.3
 sphinxcontrib-napoleon
 sphinx-autoapi
 nbsphinx
