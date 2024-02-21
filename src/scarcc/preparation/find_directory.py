@@ -34,7 +34,7 @@ def find_directory(desired_directory_name, script_filepath): # start with where 
         if check_directory(directory_path):
             return directory_path
 
-    print(f'Directory {desired_directory_name} not exist, make directory at script level.')
     directory_path = os.path.join(os.path.dirname(start_directory), desired_directory_name)
+    print(f'Directory {desired_directory_name} not exist, make directory at script level: {directory_path}')
     os.makedirs(directory_path)
     return directory_path

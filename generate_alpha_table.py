@@ -16,7 +16,7 @@ data_directory = find_directory('Data', __file__)
 E0, S0, all_components = BasicModel(model_directory=model_directory, flux_weighting=True).load_ES_models()
 
 # FBA alpha - m1
-df = get_div_obj_df([E0, S0], target_obj_val=0.5, potential_genes=['folA'],precision=2)
+df = get_div_obj_df([E0, S0], target_obj_val=0.5, potential_genes=['folA'], precision=2)
 df.to_csv(os.path.join(data_directory, 'alpha_table_m1.csv'))
 
 # refine nonessential entry and m3 table 

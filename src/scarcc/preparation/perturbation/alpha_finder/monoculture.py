@@ -290,8 +290,8 @@ def get_single_div_obj_df(model: "cobra.Model", target_obj_val: float, potential
             obj_div_df = pd.concat([obj_div_df, temp_df.set_index('Gene_inhibition')],axis=0)
     return obj_div_df
 
-def get_div_obj_df(model_list: List["cobra.Model"], target_obj_val: float, potential_genes: List=potential_genes,
-                    precision: float=3, detailed_alpha_table: bool=False):
+def get_div_obj_df(model_list: List["cobra.Model"]=None, target_obj_val: float=None, potential_genes: List=potential_genes,
+                    precision: float=3, detailed_alpha_table: bool=False, div_obj_df: pd.DataFrame=None):
     """Get the objective value for each gene in each model in model_list
     
     Parameters
@@ -306,6 +306,7 @@ def get_div_obj_df(model_list: List["cobra.Model"], target_obj_val: float, poten
         The precision of the alpha
     detailed_alpha_table : bool
         boolean to return detailed alpha table or not
+    div_obj_df : pd.DataFrame, Optional
     
     Returns
     -------
@@ -313,9 +314,12 @@ def get_div_obj_df(model_list: List["cobra.Model"], target_obj_val: float, poten
         summary_df if detailed_alpha_table is False
         alpha and normalized_biomass columns of summary_df otherwise
     """
-    alpha_obj_df_list = iter_species(model_list, get_single_div_obj_df,
-                            target_obj_val=target_obj_val, potential_genes=potential_genes, precision=precision)
-    result_df = pd.concat(alpha_obj_df_list, axis=1)
+    if div_obj_df is None:
+        alpha_obj_df_list = iter_species(model_list, get_single_div_obj_df,
+                                target_obj_val=target_obj_val, potential_genes=potential_genes, precision=precision)
+        result_df = pd.concat(alpha_obj_df_list, axis=1)
+    else:
+        result_df = div_obj_df
     if detailed_alpha_table:
         return result_df
     return result_df.filter(regex='alpha|Normalized_biomass')
