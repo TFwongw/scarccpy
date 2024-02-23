@@ -1,39 +1,13 @@
 import re
 import pandas as pd
-from setup import get_component
+import os 
+
+from scarcc.preparation.metabolic_model import get_component
 import itertools
-from flux_snapshot import (get_XG_cycle_from, set_GI_SP_as_MI)
+from .flux_snapshot import (get_XG_cycle_from, set_GI_SP_as_MI)
 
 if 'E0' not in globals():
     E0, S0, all_components = None, None,None
-
-def get_total_carbon(rxn, model, all_components, is_substrate=True,  carbon_detail=False, atp_only=False, atp_exclude=True): # TODO: exclude EX_met__L_e
-    def get_n_carbon(formula):
-        if formula in ['CO2', 'CH1O2']:
-            return 1
-        value = re.findall(r'C(\d+)', formula)
-        numeric_value = int(value[0]) if value else 0
-        return(numeric_value)
-    
-    def eval_include_in_dict(metabolite, factor, is_substrate=True):
-        if atp_exclude and metabolite.id == 'atp_c':
-            return False
-        if rxn.id == 'BIOMASS_Ec_iML1515_core_75p37M' and atp_only and metabolite.id != 'atp_c':
-            return False
-        return (factor<0) == is_substrate and get_n_carbon(metabolite.formula)!=0
-    
-    if isinstance(rxn, str):
-        rxn = get_component(model, rxn, all_components)
-    d = {m.id: {'formula': m.formula,
-                'formula_carbon': get_n_carbon(m.formula),
-                'factor': factor,
-                'carbon': factor * get_n_carbon(m.formula),}
-                for m, factor in rxn.metabolites.items() if eval_include_in_dict(m, factor, is_substrate)}
-    carbon_only = {k:v['carbon'] for k,v in d.items()}
-    if carbon_detail:
-        return carbon_only
-    carbon_total = sum(carbon_only.values())
-    return carbon_total
 
 def get_metabolite_summary(df, metabolite, index=0, top_n=10, model=E0, all_components=all_components, concat=False): # disregard factor, because of reversible
     # already separated into production_flux and consumption_flux 
@@ -78,58 +52,6 @@ def get_metabolite_summary(df, metabolite, index=0, top_n=10, model=E0, all_comp
             consumption_flux.sort_values('flux', ascending=True)[:top_n])
     return pd.concat(out_list) if concat else out_list
 
-def get_carbon_allocation_summary(s, model, all_components, detailed=False, carbon_dict= {}, format=True): # accept series as input and return allocation df   
-    for rxn, flux_value in s.filter(regex='EX_.*e$|BIOMASS_Ec_iML1515_core_75p37M$').dropna().items():
-        
-        carbon_per_flux = get_total_carbon(rxn, is_substrate=True, model=model, all_components=all_components, atp_exclude=True)
-
-        carbon_dict.update({rxn: {
-                            'carbon_per_flux': carbon_per_flux,
-                            'flux_quantity': flux_value,
-                            'carbon_exchange': float(flux_value * carbon_per_flux),
-                            }})
-    if detailed:
-        return pd.DataFrame(carbon_dict).T
-
-    carbon_allocation = pd.DataFrame({rxn: {'total_carbon': v['carbon_exchange']}
-                        for rxn, v in carbon_dict.items() if abs(v['carbon_exchange'])>1e-4}).T
-    normalize_carbon = carbon_allocation.loc['EX_lcts_e','total_carbon']
-    carbon_allocation['percent'] = (carbon_allocation.total_carbon/normalize_carbon)
-    waste_portion = -1-carbon_allocation.query('percent<0').percent.sum()
-    if abs(waste_portion)<0.01: # if waste portion is too small, ignore it
-        waste_portion = 0
-
-    waste_row = pd.DataFrame([-1*waste_portion*normalize_carbon, waste_portion] # inclusion of waste product
-                             ,columns=['Waste'], index=carbon_allocation.columns).T
-    
-    carbon_allocation = pd.concat([carbon_allocation, waste_row])
-    if format:
-        carbon_allocation['percent'] = carbon_allocation['percent'].apply(lambda x: f'{x:.2%}')
-    carbon_allocation['Gene_inhibition'] = s.name if isinstance(s.name, str) else s.name[0]
-    carbon_allocation.index.name = 'reaction'
-    return carbon_allocation
-
-def get_syn_df(gr_XG, model, gr_DG, additive_threshold = .01):
-    model_id = model.id
-    diff_bins = [-10,-1*additive_threshold,1*additive_threshold,10]
-    gr_bins = [-1,.2,1,10]
-    
-    if gr_XG.index.name == 'gene_inhibition':
-        gr_XG.index.name = 'Gene_inhibition'
-    syn_df  = pd.DataFrame([], index=gr_DG.index)
-    syn_df['Predicted_growth_rate'] = gr_XG[f'Predicted_additive_effect_{model.id}_coculture']
-    syn_df['Observed_growth_rate'] = gr_XG[f'{model.id}_coculture']
-    syn_df['P_O'] = syn_df.Predicted_growth_rate - syn_df.Observed_growth_rate
-    syn_df['Drug_comb_effect'] = pd.cut(syn_df['P_O'], bins=diff_bins, labels=['Antagonistic', 'Additive', 'Synergistic'])
-    
-    syn_df['PGR_bin'] = pd.cut(syn_df['Predicted_growth_rate'], bins=gr_bins, labels=['Low', 'Normal', 'High'])
-    syn_df['OGR_bin'] = pd.cut(syn_df['Observed_growth_rate'], bins=gr_bins, labels=['Low', 'Normal', 'High'])
-    
-    syn_df.loc[(syn_df.Predicted_growth_rate < 1.5e-8) & (syn_df.Observed_growth_rate < 1.5e-8),'P_O'] = 0
-    syn_df['gene_sort'] = (syn_df['P_O'] < 0)*10 + abs(syn_df['P_O'])
-    syn_df['Species'] = model.id
-    return syn_df
-
 def get_antagonistic_df(syn_df):
     antagonistic_list = syn_df.loc[syn_df['P_O']<0].query("P_O<-0.01").index 
     # ? func get pwy col
@@ -142,12 +64,29 @@ def get_antagonistic_df(syn_df):
 def remove_nan_from(x: pd.Series):
     return x.apply(lambda x: sorted(list(itertools.compress(x,[ele not in [None, np.nan] for ele in x]))))
 
-def get_p_o_df(E0, S0, gr_DG):
-    single_pathway_df = pd.read_csv('./Data/single_pathway_df.csv')
-    gcomb_single_pathway_df = single_pathway_df.query('XG=="DG"') # select only DG
-    p_o = pd.concat([get_syn_df(gr_DG, E0, gr_DG), get_syn_df(gr_DG, S0, gr_DG)])
-    p_o = p_o.merge(gcomb_single_pathway_df.drop('XG', axis=1), left_index=True, right_on='Gene_inhibition', how='outer')
-    return p_o.set_index('Gene_inhibition')
+def get_syn_df(gr_XG, model_id, gr_DG, additive_threshold = .01):
+    diff_bins = [-10,-1*additive_threshold,1*additive_threshold,10]
+    gr_bins = [-1,.2,1,10]
+    
+    if gr_XG.index.name == 'gene_inhibition':
+        gr_XG.index.name = 'Gene_inhibition'
+    syn_df  = pd.DataFrame([], index=gr_DG.index)
+    syn_df['Predicted_growth_rate'] = gr_XG[f'Predicted_additive_effect_{model_id}_coculture']
+    syn_df['Observed_growth_rate'] = gr_XG[f'{model_id}_coculture']
+    syn_df['P_O'] = syn_df.Predicted_growth_rate - syn_df.Observed_growth_rate
+    syn_df['Drug_comb_effect'] = pd.cut(syn_df['P_O'], bins=diff_bins, labels=['Antagonistic', 'Additive', 'Synergistic'])
+    
+    syn_df['PGR_bin'] = pd.cut(syn_df['Predicted_growth_rate'], bins=gr_bins, labels=['Low', 'Normal', 'High'])
+    syn_df['OGR_bin'] = pd.cut(syn_df['Observed_growth_rate'], bins=gr_bins, labels=['Low', 'Normal', 'High'])
+    
+    syn_df.loc[(syn_df.Predicted_growth_rate < 1.5e-8) & (syn_df.Observed_growth_rate < 1.5e-8),'P_O'] = 0
+    syn_df['gene_sort'] = (syn_df['P_O'] < 0)*10 + abs(syn_df['P_O'])
+    syn_df['Species'] = model_id
+    return syn_df
+
+def get_p_o_df(gr_DG):
+    p_o = pd.concat([get_syn_df(gr_DG, 'E0', gr_DG), get_syn_df(gr_DG, 'S0', gr_DG)])
+    return p_o
 
 # functions for complete flux df
 def add_SG_to_p_o(desired_cycle, p_o_full):

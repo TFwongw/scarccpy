@@ -5,12 +5,31 @@ from typing import List, Union
 from scarcc.util import convert_arg_to_list
 from ..flux.flux_snapshot import set_GI_SP_as_MI
 
-def get_Biomass_df(file_path_list: Union[str, List]):
+def turn_to_normal_colname(colname):
+    colname = colname.split('_')
+    new_colname = '_'.join([colname[0], 'Normal', colname[2]])
+    return new_colname
+
+def convert_col_to_gene_inhibition(s):
+    if len(s.split('.')) <=2:
+        _, gcomb, _ = s.split('_')
+        return gcomb
+    _, gcomb, _, lv_pairs = s.split('_')
+    return gcomb + '_' + lv_pairs
+
+def get_biomass_df(file_path_list: Union[str, List]):
     """read biomass_df from file"""
-    return pd.concat(
+    biomass_df =  pd.concat(
             [pd.read_csv(file, index_col='cycle')
             for file in convert_arg_to_list(file_path_list)]
         ,axis=1)
+    if biomass_df.columns.str.contains('Normal').any():
+        return biomass_df
+    
+    normal_columns = [ele for ele in biomass_df.columns if '0.0' in ele]
+    normal_columns_rename_dict = {col: turn_to_normal_colname(col) for col in normal_columns}
+    biomass_df.rename(columns=normal_columns_rename_dict, inplace=True)
+    return biomass_df
 
 def get_XG_cycle_from(desired_cycle):
     """separate SG and DG cycle from desired_cycle"""
@@ -125,10 +144,18 @@ def get_desired_cycle(biomass_df, log_step=5, scale_biomass_diff=0.1):
 
     return desired_cycle
 
+def convert_col_to_gene_inhibition(biomass_column):
+    if len(biomass_column.split('.')) <=2:
+        _, gcomb, _ = biomass_column.split('_')
+        return gcomb
+    _, gcomb, _, lv_pairs = biomass_column.split('_')
+    return gcomb + '_' + lv_pairs
+
 def get_end_BM(biomass_df):    
     """retrieve biomass at end cycle"""
     def get_species_frac_binned(end_biomass): # derive species relative abundance in media
-        stable_species_frac = end_biomass.query('Species=="E0"').reset_index('Species', drop=True)['BM_consortia_frac']
+        stable_species_frac = end_biomass.reset_index('Species', drop=True)['BM_consortia_frac']
+        # stable_species_frac = end_biomass.query('Species=="E0"').reset_index('Species', drop=True)['BM_consortia_frac'] # whyv need query E0
 
         labels = ['S', 'slight E', 'E']
         bins = [0, 0.5, 0.7, 1]
@@ -141,6 +168,7 @@ def get_end_BM(biomass_df):
             temp_df['BM_consortia_frac'] = temp_df.Biomass/temp_df.Total_BM
             temp_df['standardized_BM'] = temp_df.Biomass/temp_df.loc['Normal', 'Biomass']
             return temp_df
+        
         def separate_Species_df(df, model_id, inc_Species = False):
             """separate species from df"""
             def get_species_loc(model_id):
@@ -154,15 +182,18 @@ def get_end_BM(biomass_df):
             return result_df if inc_Species else result_df.drop('Species',axis=1)
         return pd.concat([get_ratio_and_std_col('E0'), get_ratio_and_std_col('S0')]).set_index('Species', append=True).drop(['Total_BM', 'Biomass'], axis=1)
 
-    biomass = pd.DataFrame(biomass_df.loc[:, [col for col in biomass_df.columns if 'coculture' in col]].iloc[-1]            )
+    biomass = pd.DataFrame(biomass_df.loc[:, [col for col in biomass_df.columns if 'coculture' in col]].iloc[-1])
     biomass.columns = ['Biomass']
     biomass['Species'] = list(pd.Series(biomass.index).apply(lambda x: str(x).split('_')[0]))
-    biomass['Gene_inhibition'] = list(pd.Series(biomass.index).apply(lambda x: str(x).split('_')[1]))
+    biomass['Gene_inhibition'] = list(pd.Series(biomass.index).apply(convert_col_to_gene_inhibition))
     biomass = biomass.set_index(['Gene_inhibition'])
     biomass['Total_BM'] = biomass.groupby('Gene_inhibition').Biomass.sum()
     end_biomass = set_GI_SP_as_MI(biomass).join(set_GI_SP_as_MI(add_to_end_biomass(biomass)))
     binned_col = get_species_frac_binned(end_biomass)
-    end_biomass = end_biomass.merge(binned_col, left_index=True, right_index=True, suffixes=('', '_binned'))
-    end_biomass['BM_consortia_frac_binned'] = end_biomass['BM_consortia_frac_binned'].cat.add_categories(['No growth'])
+    # return end_biomass, binned_col
+
+    # end_biomass = end_biomass.merge(binned_col, left_index=True, right_index=True, suffixes=('', '_binned'))
+    # end_biomass['BM_consortia_frac_binned'] = end_biomass['BM_consortia_frac_binned'].cat.add_categories(['No growth'])
+    end_biomass['BM_consortia_frac_binned'] = list(binned_col)
     end_biomass.loc[end_biomass.Biomass<1.01e-8,'BM_consortia_frac_binned'] = 'No growth'
     return end_biomass
