@@ -93,3 +93,35 @@ def get_carbon_allocation_E_wide(E0, all_components, additive_threshold=0.05, fl
     carbon_allocation_E_wide = carbon_allocation_E_wide.reset_index('Species', drop=True)
     # carbon_allocation_E_wide.to_csv('./Data/carbon_allocation.csv')
     return carbon_allocation_E_wide
+
+## Difference in normalized carbon flux for double gene compared to First and second 
+def get_percent_cols(df, col_suffix=None, col_prefix='percent'):
+    df = df.filter(regex=col_prefix)
+    if not col_suffix:
+        return df
+    df = df.filter(like=col_suffix) 
+    df.columns = df.columns.str.replace(col_suffix,'')
+    return df
+
+def get_fs_change(gr_path, carbon_allocation_E_wide, additive_threshold=0.05):
+    def get_sub_fs_change(fs_df, col_suffix='_First', col_prefix='percent'):
+        fs = get_percent_cols(fs_df, col_suffix, col_prefix=col_prefix)
+        # return carbon_allocation_E_wide
+        fs_change = fs - get_percent_cols(carbon_allocation_E_wide.loc[fs.index], col_suffix=None, col_prefix=col_prefix) # change compared to single gene
+        # fs_change = fs_change.merge(carbon_allocation_E_wide[['Drug_comb_effect_coc']], left_index=True, right_index=True).dropna(axis=0, how='all')
+        return fs_change
+    
+    gr_df = pd.read_csv(gr_path, index_col=0)
+    fs_df = carbon_allocation_E_wide.merge(gr_df[['First_gene', 'Second_gene']], left_index=True, right_index=True)
+
+    fs_df = (fs_df.merge(carbon_allocation_E_wide, left_on='First_gene', right_index=True, suffixes=['','_First']) # add corresponding Frist and Second flux data
+            .merge(carbon_allocation_E_wide, left_on='Second_gene', right_index=True, suffixes=['','_Second']))
+
+    fs_change = pd.concat([get_sub_fs_change(fs_df, '_First'), get_sub_fs_change(fs_df, '_Second')])
+    fs_change = fs_change.sort_index()
+    fs_change['Nth_gene'] = list(['First','Second']*len(fs_change.index.unique()))
+    # if 'Drug_comb_effect_coc' in fs_change.columns:
+    #     fs_change = fs_change.drop(['Drug_comb_effect_coc'], axis=1)
+    fs_change = fs_change.merge(carbon_allocation_E_wide.loc[:,'Drug_comb_effect_coc':], left_index=True, right_index=True)
+    
+    return fs_change
