@@ -4,8 +4,3 @@ sphinx-autoapi
 nbsphinx
 ipykernel
 matplotlib
-numpy
-pandas
-seaborn
-cobra
-scipy
