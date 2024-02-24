@@ -12,6 +12,7 @@ Welcome to scarcc's documentation!
 
    monoculture_alpha_derivation
    concatenate_data
+   carbon_allocation
    checkerboard_flux_analysis
 
 Indices and tables
