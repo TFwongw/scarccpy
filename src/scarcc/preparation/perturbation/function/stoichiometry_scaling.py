@@ -90,7 +90,7 @@ def alter_Sij(model: "Model", alphas: float = 1, genes: str = 'folA', ko=False):
                 model.reactions.get_by_id(rxn.id).knock_out()
             elif (rxn.id not in rxn_ids):
                 rxn_ids.extend(separate_reaction(model, rxn.id, alpha))# copy of reaction, forward_terminal_change = True
-    return(rxn_ids) 
+    return(rxn_ids)
 
 def get_alphas_from_tab(model: "Model", genes: List, alpha_table: pd.DataFrame) -> List: # the returned df of one gcomb index only pass as series
     """Get alpha values from alpha_table for target genes

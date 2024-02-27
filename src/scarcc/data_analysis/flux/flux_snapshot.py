@@ -22,27 +22,29 @@ def get_rcts_list(model, gcomb_list):
         rcts_set = rcts_set | set(gene_rcts)
     return rcts_list
 
-def adjust_flux_df(model, df, gene_combo: list, alpha_table:pd.DataFrame, is_checkerboard): 
+def adjust_flux_df(model, df, gene_combo: list, alpha_table:pd.DataFrame): # model for query of reactions
     # Don't use v1 cols to indicate gene_inhibition, will skip unidirectional reaction
+    print('time x', model, gene_combo)
     def query_alpha(gene_combo, alpha_table):
         splitted = gene_combo.split('.')
         print(splitted)
-        if len(splitted) <= 2:
+        if len(splitted) <= 2: # not checkerboard 
             gcomb_alpha = {gene: alpha_table.loc[gene, f'{model.id}'] for gene in gene_combo.split('.')}
             return gcomb_alpha, alpha_table
 
         # alphas
-        splitted = gene_combo.split('_')
-        # Gene_inhibition, lv_pair = [ele.split('.') for ele in 'folP.folA_1.2'.split('_')]
-        Gene_inhibition, lv_pair = [ele.split('.') for ele in gene_combo.split('_')]
-        lv_pair = tuple([int(ele) for ele in lv_pair])
-        gcomb_alpha = dict()
-        alpha_table = alpha_table.query('lv_pairs == @lv_pair')
-        for current_gene in Gene_inhibition:
-            # print(alpha_table.head())
-            gcomb_alpha.update({current_gene: 
-                                alpha_table.loc[current_gene, f'{model.id}']})
-        return gcomb_alpha, alpha_table
+        else:
+            splitted = gene_combo.split('_')
+            # Gene_inhibition, lv_pair = [ele.split('.') for ele in 'folP.folA_1.2'.split('_')]
+            Gene_inhibition, lv_pair = [ele.split('.') for ele in gene_combo.split('_')]
+            lv_pair = tuple([int(ele) for ele in lv_pair])
+            gcomb_alpha = dict()
+            alpha_table = alpha_table.query('lv_pairs == @lv_pair')
+            for current_gene in Gene_inhibition:
+                # print(alpha_table.head())
+                gcomb_alpha.update({current_gene:
+                                    alpha_table.loc[current_gene, f'{model.id}']})
+            return gcomb_alpha, alpha_table
 
     print(gene_combo)
 
@@ -58,10 +60,10 @@ def adjust_flux_df(model, df, gene_combo: list, alpha_table:pd.DataFrame, is_che
         rcts_list = get_rcts_list(model, gcomb_alpha.keys()) # exclude repeated rct for two gene
         scaled_rcts = list()
     # return df
-        for gene, rcts in zip(gcomb_alpha.keys(), rcts_list):  
+        for gene, rcts in zip(gcomb_alpha.keys(), rcts_list):
 #             rcts = [rct for rct in rcts if rct in orig_cols]
             for orig_col in rcts:
-                alpha = alpha_table.loc[f'{gene}', f'{model.id}']    
+                alpha = alpha_table.loc[f'{gene}', f'{model.id}']
                 v1_col = orig_col + "_v1"
                 reversible = v1_col  in v1_cols
                 if reversible: 

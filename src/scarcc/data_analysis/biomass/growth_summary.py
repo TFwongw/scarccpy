@@ -109,6 +109,7 @@ def get_desired_cycle(biomass_df, log_step=5, scale_biomass_diff=0.1):
         summary statistics from biomass record
     """
     def correct_cycle(cycle): # round to nearest available flux log time point
+        print('TTTTTTT', type(cycle), cycle, type(log_step), log_step)
         if cycle < log_step:
             return log_step
         return round(cycle / log_step) * log_step
@@ -136,7 +137,9 @@ def get_desired_cycle(biomass_df, log_step=5, scale_biomass_diff=0.1):
     desired_cycle['growth_phase_length'] = get_growth_phase_length()
     desired_cycle['end_cycle'] = biomass_df.index[-1]//5*5
     desired_cycle = desired_cycle.join(split_index_to_cols(desired_cycle))
-    if len(desired_cycle.Gene_inhibition.unique()) >1:
+    unique_gene_inhibition = desired_cycle.Gene_inhibition.unique()
+
+    if len(unique_gene_inhibition) >1 or '_' not in unique_gene_inhibition[0]:
         desired_cycle = desired_cycle.set_index('Gene_inhibition')[['cycle_max_gr', 'bool_growing', 'growth_phase','growth_phase_length', 'Species','culture','end_cycle']]
     else:
         desired_cycle.index = ['_'.join([x[1],x[3]]) for x in desired_cycle.index.str.split('_')]

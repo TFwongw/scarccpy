@@ -10,7 +10,7 @@ import concurrent.futures
 
 from scarcc.util import (convert_arg_to_list, rename_columns)
 from scarcc.data_analysis.biomass.growth_summary import get_desired_cycle
-from scarcc.sim_engine.simulation_workflow import get_BM_df
+# from scarcc.sim_engine.simulation_workflow import extract_biomass_flux_df
 from .alpha_finder import AlphaFinderConfig
 
 @dataclass(kw_only=True)
@@ -73,7 +73,7 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
             return self.gr_ko
         
         # alpha_in_table = self.alpha_table.loc[self.current_gene, self.E0.id] # E0 col
-        full_df, *_ =  get_BM_df(self.current_gene,n_dir=self.n_dir,alpha_table=self.alpha_table,
+        full_df, *_ =  extract_biomass_flux_df(self.current_gene,n_dir=self.n_dir,alpha_table=self.alpha_table,
                                 E0=self.E0, S0=self.S0, mono=False, p=self.p, return_sim=True, ko=True, 
                                 carbon_source_val=self.carbon_source_val, add_nutrient_val=self.add_nutrient_val,
                                 initial_pop=self.initial_pop, obj_style=self.obj_style)
@@ -191,7 +191,7 @@ class CocultureAlphaFinder(AlphaFinderConfig): # scale normal & knockout to 1-0
         nxt_alpha_table = self.generate_next_fixed_ratio_table()
         # self.trace_alpha_table.append(nxt_alpha_table.to_dict())
 
-        full_df, out_dict, co_sim = get_BM_df(self.current_gene,n_dir=self.n_dir,alpha_table=self.nxt_alpha_table,
+        full_df, out_dict, co_sim = extract_biomass_flux_df(self.current_gene,n_dir=self.n_dir,alpha_table=self.nxt_alpha_table,
                                 E0=self.E0, S0=self.S0, mono=False, p=p, return_sim=True, ko=False, 
                                 carbon_source_val=self.carbon_source_val, add_nutrient_val=self.add_nutrient_val,
                                 initial_pop=self.initial_pop, obj_style=self.obj_style)

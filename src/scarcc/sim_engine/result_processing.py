@@ -1,36 +1,63 @@
 import re
-from data_analysis.flux import flux_correction
+from dataclasses import dataclass
+from typing import Dict, Union, List
+import pandas as pd
 
-def unpack_output_object(output):
-    df, *sim_object = zip(*output)
-    return df, sim_object
-# df, sim_object = unpack_output_object(mono_output)
+from scarcc.data_analysis.flux.flux_snapshot import adjust_flux_df
+from scarcc.data_analysis import get_desired_cycle
+from scarcc.util import convert_arg_to_list
 
-def extract_dfs_from_sim_object(sim_object, flux_correction_factor):
-    species_name = [ele for ele in sim_object.total_biomass.columns[1:]]
-    if len(species_name)>1:
-        culture = 'coculture' 
-        out_dict = {f'{culture}_media' : sim_object.media}
-    else: 
-        culture = f'monoculture'
-        out_dict = {f'{species_name[0]}_{culture}_media' : sim_object.media}
-    for species in species_name:
-        flux_df =  sim_object.fluxes_by_species[f'{species}']
-        if species == 'E0':
-            print('correct E')
-            flux_df = flux_correction(flux_correction_factor, flux_df)
-            print('maxac', flux_df['EX_bulk_ac_e'].abs().max())
-        out_dict[f'{species}_{culture}_flux'] = flux_df
-    return out_dict
-        
-# unpack_output_object
-def extract_dfs(mono_sims, co_sim, flux_correction_factor=None):
-    out_dict = extract_dfs_from_sim_object(co_sim, flux_correction_factor) if co_sim else dict() # initialize out_dict from coculture if have co_sim object 
-    if mono_sims:
-        for sim_object in mono_sims[0]:
-            out_dict.update(extract_dfs_from_sim_object(sim_object, flux_correction_factor))
-    out_dict = {k: v.to_dict() for k,v in out_dict.items()}
-    return out_dict
+@dataclass
+class SimObjectBase:
+    # checkerboard handled in adjust_flux_df automatically
+    E0: 'cobra.Model'
+    S0: 'cobra.Model'
+    sim_object: 'comets.solution'
+    alpha_table: pd.DataFrame
+    current_gene: str
+
+    def __post_init__(self):
+        if isinstance(self.current_gene, list):
+            self.current_gene = '.'.join(self.current_gene)
+        self.biomass_df = (self.sim_object.total_biomass.set_index('cycle'))
+        self.model_dict = {'E0': self.E0, 'S0': self.S0}
+        self.species_list = [self.model_dict[ele] for ele in self.biomass_df.columns]
+        self.culture = 'coculture' if len(self.species_list)>1 else f'monoculture'
+        self.biomass_df = self.biomass_df.add_suffix(f'_{self.current_gene}_{self.culture}') # ?need to use rename_columns?
+
+def get_flux_snapshot(sob: SimObjectBase, model: 'cobra.Model' = None): # to map
+    model_id = model.id
+    print('snnnn', model_id)
+    biomass_df = sob.biomass_df.filter(regex=f'{model_id}') # suffix already added
+    flux_df = sob.sim_object.fluxes_by_species[f'{model_id}'].copy()
+    flux_df['Species'] = model_id
+    flux_df['culture'] = sob.culture
+    flux_df['Gene_inhibition'] = sob.current_gene
+    flux_df = adjust_flux_df(model, flux_df, sob.current_gene, alpha_table=sob.alpha_table)
+    
+    # get the last cycle
+    desired_cycle = get_desired_cycle(biomass_df)
+    # return desired_cycle
+    # TODO: snapshot handler
+    snap_shot_cycle = int(desired_cycle.cycle_max_gr)
+    snap_shot = flux_df.query('cycle == @snap_shot_cycle')
+    return snap_shot
+
+def extract_biomass_flux_df(E0: 'cobra.Model', S0: 'cobra.Model', sim_object_list: List['comets.solution'], alpha_table: pd.DataFrame, current_gene: str):
+    # function for construct class and extraction
+    def extract_biomass_flux_df_per_sim(sob: SimObjectBase) -> Dict[str, Union[pd.DataFrame, List]]: # list concat all together altogether for efficiency
+        # this is the output to the get_BM_df function
+        biomass_flux_dict = dict()
+        biomass_flux_dict['biomass'] = sob.biomass_df
+        # biomass_flux_dict['flux'] = pd.concat([get_flux_snapshot(sob, model_id=ele) for ele in sob.species_list])
+        biomass_flux_dict['flux'] = [get_flux_snapshot(sob, model=ele) for ele in sob.species_list]
+        return biomass_flux_dict['biomass'], biomass_flux_dict['flux']
+    
+    def construct_sob(sim_object: 'comets.solution'):
+        return SimObjectBase(E0=E0, S0=S0, sim_object=sim_object, alpha_table=alpha_table, current_gene=current_gene)
+    
+    # zip(biomass_df_list, flux_df_list)
+    return zip(*[extract_biomass_flux_df_per_sim(construct_sob(sim_object)) for sim_object in convert_arg_to_list(sim_object_list)])
 
 def rename_columns(df):
     df.columns = [re.sub('S0_ac_','S0.ac_', ele) for ele in df] # S0_ac -> S0.ac
