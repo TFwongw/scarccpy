@@ -27,7 +27,6 @@ class SimObjectBase:
 
 def get_flux_snapshot(sob: SimObjectBase, model: 'cobra.Model' = None): # to map
     model_id = model.id
-    print('snnnn', model_id)
     biomass_df = sob.biomass_df.filter(regex=f'{model_id}') # suffix already added
     flux_df = sob.sim_object.fluxes_by_species[f'{model_id}'].copy()
     flux_df['Species'] = model_id

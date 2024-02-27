@@ -18,23 +18,29 @@ def find_directory(desired_directory_name, script_filepath): # start with where 
 
     """
 
-    def check_directory(directory_path):
-        return os.path.isdir(directory_path)
+    # def check_directory(directory_path):
+    #     return os.path.isdir(directory_path)
     
-    start_directory = os.path.abspath(script_filepath)
-    current_directory = start_directory
+    # start_directory = os.path.abspath(script_filepath)
+    # current_directory = start_directory
 
-    max_depth = 2
-    while os.path.basename(current_directory) != 'scarccpy' and max_depth > 0:
-        # Move up one level
-        current_directory = os.path.dirname(current_directory)
-        max_depth -= 1
+    # max_depth = 2
+    # while os.path.basename(current_directory) != 'scarccpy' and max_depth > 0:
+    #     # Move up one level
+    #     current_directory = os.path.dirname(current_directory)
+    #     max_depth -= 1
 
-        directory_path = os.path.join(current_directory, desired_directory_name)
-        if check_directory(directory_path):
-            return directory_path
+    #     directory_path = os.path.join(current_directory, desired_directory_name)
+    #     if check_directory(directory_path):
+    #         return directory_path
 
-    directory_path = os.path.join(os.path.dirname(start_directory), desired_directory_name)
-    print(f'Directory {desired_directory_name} not exist, make directory at script level: {directory_path}')
-    os.makedirs(directory_path)
-    return directory_path
+    # directory_path = os.path.join(os.path.dirname(start_directory), desired_directory_name)
+    # print(f'Directory {desired_directory_name} not exist, make directory at script level: {directory_path}')
+    # os.makedirs(directory_path)
+    # return directory_path
+
+    desired_directory = os.path.join(script_filepath, desired_directory_name)
+    if not os.path.isdir(desired_directory):
+        print(f'make directory  at script level: {desired_directory}')
+        os.makedirs(desired_directory)
+    return desired_directory

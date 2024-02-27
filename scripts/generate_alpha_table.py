@@ -2,15 +2,15 @@ import os
 import pandas as pd
 
 from scarcc.preparation.metabolic_model import BasicModel
-from scarcc.preparation.find_directory import find_directory 
+from scarcc.preparation.find_directory import find_directory
 from scarcc.preparation.perturbation.alpha_finder.monoculture import get_div_obj_df
 
 # read potential genes
 potential_genes = ['folA']
 
 # get file directory 
-model_directory = find_directory('models', __file__)
-data_directory = find_directory('Data', __file__)
+model_directory = find_directory('models', os.path.abspath(''))
+data_directory = find_directory('Data', os.path.abspath(''))
 
 # initialize model
 E0, S0, all_components = BasicModel(model_directory=model_directory, flux_weighting=True).load_ES_models()

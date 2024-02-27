@@ -109,7 +109,6 @@ def get_desired_cycle(biomass_df, log_step=5, scale_biomass_diff=0.1):
         summary statistics from biomass record
     """
     def correct_cycle(cycle): # round to nearest available flux log time point
-        print('TTTTTTT', type(cycle), cycle, type(log_step), log_step)
         if cycle < log_step:
             return log_step
         return round(cycle / log_step) * log_step

@@ -24,7 +24,6 @@ def get_rcts_list(model, gcomb_list):
 
 def adjust_flux_df(model, df, gene_combo: list, alpha_table:pd.DataFrame): # model for query of reactions
     # Don't use v1 cols to indicate gene_inhibition, will skip unidirectional reaction
-    print('time x', model, gene_combo)
     def query_alpha(gene_combo, alpha_table):
         splitted = gene_combo.split('.')
         print(splitted)

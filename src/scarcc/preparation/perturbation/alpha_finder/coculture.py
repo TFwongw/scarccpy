@@ -1,7 +1,6 @@
 import os
 import json
 import numpy as np
-from scipy.optimize import curve_fit
 
 from dataclasses import dataclass, field
 from typing import List
