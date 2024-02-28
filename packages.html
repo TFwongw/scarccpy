@@ -1,0 +1,128 @@
+<html>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+      <div class="mermaid">
+    
+        classDiagram
+          class scarcc {
+          }
+          class data_analysis {
+          }
+          class biomass {
+          }
+          class _pathway_summary {
+          }
+          class growth_summary {
+          }
+          class plot_growth_curve {
+          }
+          class drug_combination_response {
+          }
+          class classification {
+          }
+          class flux {
+          }
+          class carbon_allocation {
+          }
+          class flux_correction {
+          }
+          class flux_ratio_analysis {
+          }
+          class flux_snapshot {
+          }
+          class plot {
+          }
+          class heatmap {
+          }
+          class kde {
+          }
+          class legend {
+          }
+          class scatter {
+          }
+          class preparation {
+          }
+          class find_directory {
+          }
+          class metabolic_model {
+          }
+          class basic_model {
+          }
+          class core {
+          }
+          class component {
+          }
+          class flux_weighting {
+          }
+          class medium {
+          }
+          class perturbation {
+          }
+          class alpha_finder {
+          }
+          class alpha_finder {
+          }
+          class coculture {
+          }
+          class monoculture {
+          }
+          class function {
+          }
+          class iter_species {
+          }
+          class stoichiometry_scaling {
+          }
+          class target_gene {
+          }
+          class process_double_gene {
+          }
+          class sim_engine {
+          }
+          class data_processing {
+          }
+          class preprocess_flux {
+          }
+          class result_processing {
+          }
+          class simulation_configuration {
+          }
+          class simulation_workflow {
+          }
+          class util {
+          }
+          class util {
+          }
+          data_analysis --> growth_summary
+          data_analysis --> classification
+          data_analysis --> carbon_allocation
+          data_analysis --> flux_ratio_analysis
+          data_analysis --> flux_snapshot
+          data_analysis --> heatmap
+          data_analysis --> kde
+          data_analysis --> legend
+          data_analysis --> scatter
+          flux_ratio_analysis --> flux_snapshot
+          preparation --> alpha_finder
+          preparation --> coculture
+          preparation --> monoculture
+          metabolic_model --> basic_model
+          metabolic_model --> component
+          basic_model --> core
+          core --> component
+          core --> flux_weighting
+          core --> medium
+          perturbation --> iter_species
+          perturbation --> stoichiometry_scaling
+          alpha_finder --> coculture
+          alpha_finder --> monoculture
+          coculture --> alpha_finder
+          monoculture --> alpha_finder
+          function --> iter_species
+          function --> stoichiometry_scaling
+          simulation_workflow --> result_processing
+          simulation_workflow --> simulation_configuration
+          util --> util
+  
+       </div>
+  </body>
+</html>

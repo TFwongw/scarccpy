@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='scarcc',
-    version='0.0.10',
+    version='0.0.21',
     url='https://github.com/TFwongw/scarccpy',
     author='Thomas Wong',
     author_email='wong0755@umn.edu',
@@ -10,8 +10,12 @@ setup(
     long_description_content_type='text/markdown',
     packages=find_packages(where="src"),
     package_dir = {"": "src"},
+    python_requires='>=3.10',
     install_requires=[
+        'pandas<2.0'
+        'matplotlib',
+        'seaborn>0.11',
         'cobra',
-        'pandas<2',
+        'cometspy'
     ],
 )

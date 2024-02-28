@@ -1,0 +1,197 @@
+<html>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+      <div class="mermaid">
+    
+        classDiagram
+          class AlphaFinderConfig {
+            acceptance_threshold_lower : Optional[float]
+            acceptance_threshold_upper : Optional[float]
+            alpha_lb : float
+            alpha_ub : float
+            current_gene : Optional[str]
+            early_stop : bool
+            ever_eval : bool
+            exp_leap : float
+            found_alpha : Optional[bool]
+            i_iter : int
+            is_growth_switch : Optional[bool]
+            is_monoculture : Optional[bool]
+            is_new_ub : Optional[bool]
+            iter_max : int
+            ko_intercepted : bool
+            model : Optional[Union['cobra.Model', List['cobra.Model']]]
+            precision : int
+            search_alpha : Optional[float]
+            target_obj_val : Optional[float]
+            trace_obj_val : Optional[dict]
+            classify_growth_switch(min_attain, max_attain) bool
+            eval_alpha_fun()*
+            find_feasible_alpha()
+            get_next_alpha(search_alpha, alpha_lb, alpha_ub, is_new_ub, exp_leap)
+            is_found(search_alpha, alpha_lb, alpha_ub, precision)
+            out_fun()*
+          }
+          class BasicModel {
+            E0 : Model
+            E_carbon_byproduct_reuptake : bool
+            S0 : Model
+            ac_scale : float
+            all_components : Optional[Dict[str, Any]]
+            c_limiting_conc : int
+            flux_weighting : Optional[bool]
+            gal_scale : float
+            met_limiting_conc : int
+            model_directory : str
+            implement_flux_weighting()
+            load_ES_models()
+            set_ES_medium()
+          }
+          class CocultureAlphaFinder {
+            E0
+            S0
+            acceptance_threshold_lower : float
+            acceptance_threshold_upper : float
+            add_nutrient_val : float
+            alpha_pair : DataFrame
+            alpha_table : DataFrame
+            alpha_use : float
+            carbon_source_val : float
+            co_sim
+            cocdf
+            converge_alpha
+            current_gene : str
+            data_path : NoneType
+            eval_alpha_fun
+            exp_leap : float, int
+            found_alpha
+            gr_Normal : Optional[float]
+            gr_ko : Optional[float]
+            initial_pop : float
+            is_growth_switch : bool
+            is_monoculture : bool
+            is_new_ub
+            ko_intercepted : NoneType
+            model : List['cobra.Model']
+            n_dir : str
+            nxt_alpha_table : DataFrame
+            obj_found
+            obj_style : str
+            opt_alpha_table : DataFrame
+            opt_df : list
+            out_fun
+            p : NoneType
+            precision : int
+            search_alpha : float
+            target_obj_val : float
+            trace_alpha : List
+            trace_biomass : List
+            trace_obj_val : List
+            cal_fitted_gr(coculture_biomass_df)
+            cal_std_gr(coculture_biomass_df, gr_Normal)
+            calculate_gr_Normal()
+            calculate_gr_ko()
+            eval_alpha_fun(alpha_overwrite)
+            generate_next_fixed_ratio_table()
+            get_alpha_use()
+            out_fun()
+          }
+          class CombinedAntibioticsSimulation {
+            alpha_table : str
+            base : Optional[str]
+            biomass_df : DataFrame
+            biomass_flux_dict : dict
+            checker_suffix : Optional[str]
+            co_sim_object : str
+            current_gene : str
+            flux_df
+            ko : bool
+            mono_sim_object_list : List['comets.simulation']
+            p : str
+            return_sim : bool
+            sim_object_list : List['comets.simulation']
+            working_dir : Optional[str]
+            cleanup()
+            get_BM_df()
+          }
+          class FluxCompare {
+            DG_cycle
+            DG_list : Optional[List]
+            E0 : Model
+            S0 : Model
+            SG_cycle
+            SG_list : set
+            XG_df_list : list
+            alpha_table : DataFrame
+            count : int
+            culture_options : str
+            desired_cycle : DataFrame
+            desired_cycle_col : str
+            file_list : NoneType
+            flux_compare_df : DataFrame
+            flux_compare_dict : Dict
+            flux_dict : Dict
+            is_checkerboard : bool
+            item_options : str
+            get_flux_compare_df()
+            get_flux_dict_per_culture_item(model, sub_flux_dict, culture_item, desired_cycle, log_step, high_pass_cycle)
+            retrive_specific_culture()
+          }
+          class LayoutConfig {
+            E0 : str
+            E_model : str
+            S0 : str
+            S_model : str
+            Smono_carbon_source : str
+            base_nutrients : Optional[List]
+            carbon_source : Optional[Dict[str, str]]
+            carbon_source_val : float
+            co : bool
+            co_layout
+            initial_pop : float
+            mono : bool
+            monoE_layout
+            monoS_layout : layout
+            mono_E : bool
+            mono_S : bool
+            nutrients_val : int
+            obj_style : str
+            create_common_media(species: List['cobra.Model'], carbon_source: str, carbon_source_val: float, additonal_nutrients: List[str], additonal_nutrients_val: List[int])
+            set_comets_model()
+            set_layout_object()
+          }
+          class MonocultureAlphaFinder {
+            acceptance_threshold_lower : float
+            acceptance_threshold_upper : float
+            exp_leap : float
+            found_alpha
+            is_monoculture : bool
+            is_new_ub
+            model : str
+            norm_obj_val : Optional[float]
+            opt_df : DataFrame
+            response_record : Optional[Dict]
+            search_alpha : float
+            trace_obj_val : List
+            eval_alpha_fun()
+            fill_response_record(obj_val, is_lowest_abs_diff)
+            out_fun()
+          }
+          class SimObjectBase {
+            E0 : str
+            S0 : str
+            alpha_table : DataFrame
+            biomass_df
+            culture : str
+            current_gene : str
+            model_dict : dict
+            sim_object : str
+            species_list
+          }
+          CocultureAlphaFinder --|> AlphaFinderConfig
+          MonocultureAlphaFinder --|> AlphaFinderConfig
+          CombinedAntibioticsSimulation --|> LayoutConfig
+  
+       </div>
+  </body>
+</html>
