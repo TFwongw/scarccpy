@@ -56,8 +56,8 @@ class CombinedAntibioticsSimulation(LayoutConfig):
 
         path_elements = [self.base, 'SimChamber', '.'.join(self.current_gene)] if 'SimChamber' not in self.base else [self.base, '.'.join(self.current_gene)]
         self.working_dir = os.path.join(*path_elements) # '' as specification of directory where COMETS files are stored
-        if not os.path.exists(self.working_dir):
-            os.makedirs(self.working_dir)
+        os.makedirs(self.working_dir, exist_ok=True)
+        
         # filepath
     def cleanup(self):
         try:
@@ -94,4 +94,7 @@ class CombinedAntibioticsSimulation(LayoutConfig):
         self.cleanup()
         return self.biomass_df, self.flux_df
 
+# def save_
+# def analyze_and_save
+    
 # TODO: add multiprocessing for parsing gene combo list 
