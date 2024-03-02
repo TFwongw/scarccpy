@@ -2,7 +2,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 
-from scarcc.util import convert_arg_to_list
+from scarcc.utils import convert_arg_to_list
 
 def scatter_xycol_A(flux_analysis, x_col='EX_bulk_ac_e', y_col='BIOMASS_iRR1083_metals'):
     sns.set_context('paper', font_scale=1.5)

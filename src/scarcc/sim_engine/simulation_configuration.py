@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import logging
 
 import cometspy as c
-from scarcc.util import convert_arg_to_list
+from scarcc.utils import convert_arg_to_list
 
 logger = logging.getLogger(__name__)
 

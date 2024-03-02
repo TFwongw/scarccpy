@@ -7,8 +7,8 @@ from typing import List
 import pandas as pd
 import concurrent.futures
 
-from scarcc.util import (convert_arg_to_list, rename_columns)
-from scarcc.data_analysis.biomass.growth_summary import get_desired_cycle
+from scarcc.utils import (convert_arg_to_list, rename_columns)
+from scarcc.data_analysis.growth.growth_summary import get_desired_cycle
 # from scarcc.sim_engine.simulation_workflow import extract_biomass_flux_df
 from .alpha_finder import AlphaFinderConfig
 

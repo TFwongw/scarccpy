@@ -6,7 +6,7 @@ import pandas as pd
 from typing import List, Dict
 
 from scarcc.preparation.perturbation import alter_Sij, iter_species
-from scarcc.util import convert_arg_to_list
+from scarcc.utils import convert_arg_to_list
 from .alpha_finder import AlphaFinderConfig
 
 logger = logging.getLogger(__name__)

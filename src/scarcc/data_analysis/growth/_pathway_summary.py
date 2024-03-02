@@ -3,7 +3,7 @@ import pandas as pd
 import itertools
 import numpy as np
 
-from scarcc.util import convert_arg_to_list
+from scarcc.utils import convert_arg_to_list
 from scarcc.preparation.metabolic_model import get_gene_id
 
 if 'alpha_table' not in globals():

@@ -2,7 +2,7 @@
 
 import pandas as pd
 from typing import List
-from scarcc.util import convert_arg_to_list
+from scarcc.utils import convert_arg_to_list
 from scarcc.preparation.metabolic_model import get_gene_id
 
 def scale_reaction(model: "Model", reaction_id: str, alpha: float, direction='forward'):

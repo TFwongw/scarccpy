@@ -2,7 +2,7 @@
 import re
 import cobra
 from typing import Union, List, Dict
-from scarcc.util import convert_arg_to_list
+from scarcc.utils import convert_arg_to_list
 
 def get_gene_id(model: "cobra.Model", gene_name: str) -> str:
     """Query the id of the gene

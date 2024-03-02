@@ -7,7 +7,7 @@ import re
 import json 
 import numpy as np
 
-from scarcc.util import (convert_arg_to_list, remove_Zero_col)
+from scarcc.utils import (convert_arg_to_list, remove_Zero_col)
 from scarcc.preparation.metabolic_model import get_gene_id
 # from growth_summary import (get_maximum_growth_cycle)
 

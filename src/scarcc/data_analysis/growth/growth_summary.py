@@ -2,7 +2,7 @@
 
 import pandas as pd
 from typing import List, Union
-from scarcc.util import convert_arg_to_list
+from scarcc.utils import convert_arg_to_list
 from ..flux.flux_snapshot import set_GI_SP_as_MI
 
 def turn_to_normal_colname(colname):
