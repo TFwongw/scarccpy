@@ -25,13 +25,15 @@ import cometspy as c
 alpha_table = pd.read_csv(os.path.join(data_directory, 'alpha_table_m1.csv'), index_col=0)
 initial_pop = 1e-8
 
-p = c.params()
-p.set_param("defaultKm", 0.00001) # M 
-p.set_param("defaultVmax", 10) #mmol/gDw/hr
-p.set_param("maxCycles", 180)
-p.set_param("timeStep", 1) 
-p.set_param('writeFluxLog', True)
-p.set_param('writeMediaLog', True)
+# p = c.params()
+# p.set_param("defaultKm", 0.00001) # M 
+# p.set_param("defaultVmax", 10) #mmol/gDw/hr
+# p.set_param("maxCycles", 180)
+# p.set_param("timeStep", 1) 
+# p.set_param('writeFluxLog', True)
+# p.set_param('writeMediaLog', True)
+
+p = None
 
 obj_style = 'MAX_OBJECTIVE_MIN_TOTAL'
 

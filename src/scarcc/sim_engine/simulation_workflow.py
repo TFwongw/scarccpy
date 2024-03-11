@@ -3,14 +3,18 @@ import logging
 import pandas as pd
 from typing import List
 from dataclasses import dataclass, field
+from collections import defaultdict
+import itertools
 
 import concurrent.futures
 import cometspy as c
 
-from scarcc.util import convert_arg_to_list
+from scarcc.utils import convert_arg_to_list
+from scarcc.data_analysis.growth.growth_rate import MethodDataFiller
+
 from .simulation_configuration import LayoutConfig
 from scarcc.preparation.perturbation import get_alphas_from_tab, alter_Sij
-from .result_processing import extract_biomass_flux_df
+from .flux_extraction import extract_biomass_flux_df
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +38,7 @@ def sim_culture(layout, p=None, base = None):
     return sim
 
 @dataclass(kw_only=True)
-class CombinedAntibioticsSimulation(LayoutConfig):
+class SimulateCombinedAntibiotics(LayoutConfig):
     current_gene: str
     p: 'comets.p'
     alpha_table: str
@@ -90,11 +94,38 @@ class CombinedAntibioticsSimulation(LayoutConfig):
                 self.sim_object_list.extend(self.mono_sim_object_list)
             
         self.biomass_df, self.flux_df = extract_biomass_flux_df(self.E0, self.S0, self.sim_object_list, alpha_table=self.alpha_table, current_gene=self.current_gene)
-        self.biomass_flux_dict = {'biomass': self.biomass_df, 'flux': self.flux_df}
         self.cleanup()
         return self.biomass_df, self.flux_df
 
-# def save_
-# def analyze_and_save
-    
-# TODO: add multiprocessing for parsing gene combo list 
+def read_alpha_table(data_directory, alpha_table_suffix):
+    # check file exist
+    # ? check alpht_table contains all SG
+    file_dir = os.path.join(data_directory, f'alpha_table_{alpha_table_suffix}.csv')
+    if os.path.isfile(file_dir):
+        alpha_table = pd.read_csv(os.path.join(data_directory, f'alpha_table_{alpha_table_suffix}.csv'))
+        return alpha_table
+    else:
+        # ? run procedure for creating alpha_table
+        raise FileNotFoundError(f'File {file_dir} does not exist')
+
+def nested_dict(d):
+    result = {}
+    for keys, value in d.items():
+        current_dict = result
+        for key in keys[:-1]:
+            current_dict = current_dict.setdefault(key, {})
+        current_dict[keys[-1]] = value
+    return result
+
+def unpack_future_result_per_key(result_list):
+    keys = ['biomass', 'flux']
+    # return {k: v for k, v in zip(keys, zip(*[r.result() for r in result_list]))}
+    return dict(zip(keys, zip(*result_list)))
+
+def concat_result(result_dict):
+    def concat_df(key, df_list):
+        if 'biomass' in key:
+            return pd.concat(df_list, axis=1)
+        return pd.concat(df_list, axis=0)
+    return {k: concat_df(k, v) for k, v in result_dict.items()}
+

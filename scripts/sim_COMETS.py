@@ -6,7 +6,7 @@ import itertools
 import cometspy as c
 from scarcc.preparation.find_directory import find_directory
 from scarcc.preparation.metabolic_model import BasicModel
-from scarcc.sim_engine.simulation_workflow import CombinedAntibioticsSimulation
+from scarcc.sim_engine.simulation_workflow import SimulateCombinedAntibiotics
 
 p = c.params()
 p.set_param("defaultKm", 0.00001) # M
@@ -32,7 +32,7 @@ E0, S0, all_components = BasicModel(model_directory=model_directory, flux_weight
 # alpha_table = pd.read_csv(os.path.join(data_directory, 'alpha_table_m1.csv'), index_col=0)
 alpha_table = pd.DataFrame([[2000], [40]], index=['E0', 'S0'], columns=['folA']).T
 
-cas = CombinedAntibioticsSimulation(current_gene='folA', E0=E0, S0=S0, alpha_table=alpha_table,
+cas = SimulateCombinedAntibiotics(current_gene='folA', E0=E0, S0=S0, alpha_table=alpha_table,
                                 p=p, mono=True, base=chamber_directory)
 
 biomass_df_list, flux_df_list = cas.get_BM_df()
