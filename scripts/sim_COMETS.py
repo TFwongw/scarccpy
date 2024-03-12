@@ -24,8 +24,11 @@ logging.basicConfig(filename='scarcc_simulation.log',
 
 model_directory = find_directory('models', os.path.abspath(''))
 data_directory = find_directory('Data', os.path.abspath(''))
-
 chamber_directory = find_directory('SimChamber', os.path.abspath(''))
+
+model_directory = '../models'
+data_directory = '../Data'
+chamber_directory = '../SimChamber'
 
 # initialize model
 E0, S0, all_components = BasicModel(model_directory=model_directory, flux_weighting=True).load_ES_models()

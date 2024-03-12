@@ -2,6 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import Dict, Union, List
 import pandas as pd
+import itertools
 
 from scarcc.data_analysis.flux.flux_snapshot import adjust_flux_df
 from scarcc.data_analysis import get_desired_cycle
@@ -56,12 +57,15 @@ def extract_biomass_flux_df(E0: 'cobra.Model', S0: 'cobra.Model', sim_object_lis
         return SimObjectBase(E0=E0, S0=S0, sim_object=sim_object, alpha_table=alpha_table, current_gene=current_gene)
     
     # zip(biomass_df_list, flux_df_list)
-    return zip(*[extract_biomass_flux_df_per_sim(construct_sob(sim_object)) for sim_object in convert_arg_to_list(sim_object_list)])
+    biomass_list, flux_nested_list = zip(*[extract_biomass_flux_df_per_sim(construct_sob(sim_object)) for sim_object in convert_arg_to_list(sim_object_list)])
+    biomass_df = pd.concat(biomass_list, axis=1)
+    flux_df = pd.concat(itertools.chain(*flux_nested_list), axis=0) # concatenated for all co and mono sim_objects
+    return biomass_df, flux_df
 
 def rename_columns(df):
     df.columns = [re.sub('S0_ac_','S0.ac_', ele) for ele in df] # S0_ac -> S0.ac
     df.columns = [re.sub('S0_gal_','S0.gal_', ele) for ele in df] # S0_ac -> S0.ac
-    df.columns = [re.sub(',','.',w
+    df.columns = [re.sub(',','.',
            re.sub('\'|\(|\)| |\[|\]','',ele)) # ('gene1', 'gene2') -> gene1.gene2
            for ele in df.columns]
     return(df.columns)

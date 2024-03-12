@@ -39,6 +39,10 @@ def find_directory(desired_directory_name, script_filepath): # start with where 
     # os.makedirs(directory_path)
     # return directory_path
 
+
+    # make sure is is a directory and not file
+    if os.path.isfile(script_filepath):
+        script_filepath = os.path.dirname(script_filepath)
     desired_directory = os.path.join(script_filepath, desired_directory_name)
     if not os.path.isdir(desired_directory):
         print(f'make directory  at script level: {desired_directory}')

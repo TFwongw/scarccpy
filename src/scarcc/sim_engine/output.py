@@ -1,14 +1,12 @@
 import pandas as pd
 import os
-import numpy as np
 import itertools
+import logging
 
 from scarcc.data_analysis import convert_po_col
 from scarcc.data_analysis.growth.growth_rate import get_growth_rate_df
 
-def convert_po_col(col, additive_threshold=0.05):
-    diff_bins = [-10,-1*additive_threshold,1*additive_threshold,10] 
-    return pd.cut(col, bins=diff_bins, labels=['Antagonistic', 'Additive', 'Synergistic'])
+logger = logging.getLogger(__name__)
 
 def merge_single_gene_gr(sg_df, dg_df):
     # gcomb as index, retrive the corresponding single gene in sg_df
@@ -52,36 +50,46 @@ class DrugCombinationEffectClassification:
     def __init__(self, dfs_in_SG_layer, dfs_in_DG_layer):
         self.dfs_in_SG_layer = dfs_in_SG_layer
         self.dfs_in_DG_layer = dfs_in_DG_layer
-        
+        self.generate_DG = dfs_in_DG_layer is not None
+        self.pure_dg_gr = None
+
     # construct a sub her, normalize df
     def get_gr_df(self):
         sg_df = get_growth_rate_df(self.dfs_in_SG_layer['biomass'])
-        dg_df = get_growth_rate_df(self.dfs_in_DG_layer['biomass'])
-        self.pure_dg_gr = dg_df.copy()
+        self.dfs_in_SG_layer['growth_rate'] = reorder_columns(sg_df)
+        if self.generate_DG:
+            dg_df = get_growth_rate_df(self.dfs_in_DG_layer['biomass'])
+            self.pure_dg_gr = dg_df.copy() # This is before merge, because joining sg_df in non-normalized and normalized 
 
-        dg_df = merge_single_gene_gr(sg_df, dg_df)        
-        self.dfs_in_SG_layer['growth_rate'], self.dfs_in_DG_layer['growth_rate'] = [reorder_columns(df) for df in [sg_df, dg_df]]
+            dg_df = merge_single_gene_gr(sg_df, dg_df)
+            self.dfs_in_DG_layer['growth_rate'] = reorder_columns(dg_df)
 
     def get_normalized_gr_df(self):
-        sg_df = self.dfs_in_SG_layer['growth_rate'].copy()
-        dg_df = self.pure_dg_gr
-        normal_row = sg_df.loc['Normal']
-        sg_df, dg_df = sg_df.div(normal_row), dg_df.div(normal_row)
-        dg_df = merge_single_gene_gr(sg_df, dg_df)
-        dg_df = add_additive_and_drug_comb_response(dg_df)
-        self.dfs_in_SG_layer['normalized_growth_rate'], self.dfs_in_DG_layer['normalized_growth_rate'] = [reorder_columns(df) for df in [sg_df, dg_df]]
-        self.dfs_in_DG_layer['drug_response_classification'] = dg_df.filter(regex='Drug_comb_effect_')
+        # sg_df = self.dfs_in_SG_layer['growth_rate'].copy() # reassignment fo not affect non-normalized gr
+        sg_df = self.dfs_in_SG_layer['growth_rate']
+        sg_df = sg_df.div(sg_df.loc['Normal'])
+        self.dfs_in_SG_layer['normalized_growth_rate'] = reorder_columns(sg_df)
+            
+        if self.generate_DG:
+            dg_df = self.pure_dg_gr
+            dg_df = dg_df.div(sg_df.loc['Normal'])
+            dg_df = merge_single_gene_gr(sg_df, dg_df)
+            dg_df = add_additive_and_drug_comb_response(dg_df)
+            self.dfs_in_DG_layer['normalized_growth_rate'] = reorder_columns(dg_df)
+            self.dfs_in_DG_layer['drug_response_classification'] = dg_df.filter(regex='Drug_comb_effect_')
 
 class MethodDataFiller:
     # TODO: handler for not supplying SG biomass, OR handle for the first construction of container dict
-    # ! Is infact op diff rather than po diff - rename column
+    # ! Is in fact op diff rather than po diff - rename column
     # for each method, cal the ~. , og idea go into the method, with SG and DG as sub dict
     # one level dict - query method as first element in tuple
+    # ！if DG none then no cal any for DG OR ensure both SG and DG exist
     def __init__(self, df_container, data_directory): #? make a base accept only sg, dg
         self.df_container = df_container
         self.data_directory = data_directory
         self.methods = set([key[0] for key in df_container.keys()]) # first element of tuple is method
-        
+        self.XGs = set([key[1] for key in df_container.keys()]) # DG or SG
+
     def fill_container(self):
         for method in self.methods:
             dcd = DrugCombinationEffectClassification(self.df_container[method, 'SG'], self.df_container[method, 'DG']) # each key level are dict of dfs
@@ -107,11 +115,10 @@ class MethodDataFiller:
                 if df is not None:
                     file_path = filename_format(self.data_directory, method, XG, df_type)
                     df.to_csv(file_path)
-                    print(f'Saved data frames for {method}: biomass, growth_rate, normalized_growth_rate, drug_response_classification in {file_path}')
+                    logger.info(f'Saved data frames for {method, XG}: biomass, growth_rate, normalized_growth_rate, drug_response_classification in {file_path}')
 
         # write flux into one file
         for method in self.methods:
-            flux_df_full = pd.concat([self.df_container[method, XG]['flux'] for XG in ['SG', 'DG']])
+            flux_df_full = pd.concat([self.df_container[method, XG]['flux'] for XG in self.XGs])
             flux_df_full.to_csv(os.path.join(self.data_directory, f'flux_analysis_{method}.csv'))
-            print(f'Flux data derived from {method} were saved in {self.data_directory}')
-
+            print(f'biomass, growth_rate, normalized_growth_rate, drug_response_classification, flux data derived from {method} were saved in {self.data_directory}')

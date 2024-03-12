@@ -17,5 +17,3 @@ from .plot.heatmap import (generate_row_colors, relabel_clustermap, assign_plot_
 from .plot.kde import (get_fs_kde_plot, plot_kde)
 from .plot.legend import get_row_color_legend
 from .plot.scatter import scatter_xycol_A, scatter_xycol_B
-
-from .growth.growth_rate import MethodDataFiller 
