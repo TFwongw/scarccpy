@@ -7,8 +7,8 @@ Welcome to scarcc's documentation!
 ==================================
 
 .. toctree::
+   :numbered: 3
    :maxdepth: 2
-   :caption: Contents:
 
    monoculture_alpha_derivation
    concatenate_data

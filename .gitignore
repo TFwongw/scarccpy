@@ -9,6 +9,7 @@ SimChamber/
 # Sphinx documentation
 _build/
 .doctrees/
+docs/source/
 
 # Python specific
 **/__pycache__/
