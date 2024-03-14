@@ -1,4 +1,4 @@
-# Find alpha from 
+"""Search for IC values by percentage of biomass production in FBA under perturbation"""
 
 from dataclasses import dataclass, field
 import logging
@@ -235,7 +235,7 @@ def Sij_biomass(model: "cobra.Model", alphas: float = 1, genes: str = 'folA', sl
 #             return(pd.DataFrame([{f'biomass': model.slim_optimize()}]))
             return(model.slim_optimize())
 
-def get_single_div_obj_df(model: "cobra.Model", target_obj_val: float, potential_genes: list, precision: int = 3, search_alpha: float= 1.02,
+def get_single_div_biomass_df(model: "cobra.Model", target_obj_val: float, potential_genes: list, precision: int = 3, search_alpha: float= 1.02,
                         alpha_table: pd.DataFrame = None, acceptance_threshold_upper: float = 1.1, acceptance_threshold_lower: float=.95) -> pd.DataFrame: 
     """Get the objective value for each gene in a single model
     If alpha_table is not provided, perform a search for the optimal alpha 
@@ -264,41 +264,39 @@ def get_single_div_obj_df(model: "cobra.Model", target_obj_val: float, potential
     pd.DataFrame
         summary_df        
     """
-    obj_div_df = pd.DataFrame() # obj_val: biomass/ growth rate
+    alpha_biomass_df = pd.DataFrame() # obj_val: biomass/ growth rate
 
     for current_gene in potential_genes: # iter gene 
-        logger.debug('%s in cal', current_gene)
-        print(current_gene, 'in cal')
-        with model:
-            if alpha_table is None: 
-                if not search_alpha: search_alpha = 1.02
-                # AlphaFinder class for every model and SG
-                AF = MonocultureAlphaFinder(model=model,
-                            search_alpha = search_alpha,
-                            current_gene = current_gene, 
-                            target_obj_val = target_obj_val, 
-                            exp_leap=3,
-                            precision=precision,
-                            acceptance_threshold_upper = acceptance_threshold_upper,
-                            acceptance_threshold_lower = acceptance_threshold_lower)
-                alpha, obj_value, temp_df = AF.find_feasible_alpha()
-            else:
-                alpha = alpha_table.loc[current_gene,f'{model.id}_alpha'] # get alpha for corresponding gene from alpha_df
-                alpha, obj_value, temp_df = Sij_biomass(model, alpha,
-                                                    genes = current_gene)
-            temp_df['Gene_inhibition'] = current_gene 
-            obj_div_df = pd.concat([obj_div_df, temp_df.set_index('Gene_inhibition')],axis=0)
-    return obj_div_df
+        logger.debug('Searching Model: %s, Gene: %s ', model.id, current_gene)
+        if alpha_table is None: 
+            if not search_alpha: search_alpha = 1.02
+            # AlphaFinder class for every model and SG
+            AF = MonocultureAlphaFinder(model=model,
+                        search_alpha = search_alpha,
+                        current_gene = current_gene, 
+                        target_obj_val = target_obj_val, 
+                        exp_leap=3,
+                        precision=precision,
+                        acceptance_threshold_upper = acceptance_threshold_upper,
+                        acceptance_threshold_lower = acceptance_threshold_lower)
+            alpha, obj_value, temp_df = AF.find_feasible_alpha()
+        else:
+            alpha = alpha_table.loc[current_gene,f'{model.id}_alpha'] # get alpha for corresponding gene from alpha_df
+            alpha, obj_value, temp_df = Sij_biomass(model, alpha,
+                                                genes = current_gene)
+        temp_df['Gene_inhibition'] = current_gene 
+        alpha_biomass_df = pd.concat([alpha_biomass_df, temp_df.set_index('Gene_inhibition')],axis=0)
+    return alpha_biomass_df
 
-def get_div_obj_df(model_list: List["cobra.Model"]=None, target_obj_val: float=None, potential_genes: List=potential_genes,
-                    precision: float=3, detailed_alpha_table: bool=False, div_obj_df: pd.DataFrame=None):
+def get_alpha_biomass_df(model_list: List["cobra.Model"]=None, target_normalized_biomass: float=None, potential_genes: List=potential_genes,
+                    precision: float=3, detailed_alpha_table: bool=False, alpha_biomass_df: pd.DataFrame=None):
     """Get the objective value for each gene in each model in model_list
     
     Parameters
     ----------
     model_list : List
         List of cobra models
-    target_obj_val : float
+    target_normalized_biomass : float
         The desired target objective value
     potential_genes : List
         List of potential genes 
@@ -306,7 +304,7 @@ def get_div_obj_df(model_list: List["cobra.Model"]=None, target_obj_val: float=N
         The precision of the alpha
     detailed_alpha_table : bool
         boolean to return detailed alpha table or not
-    div_obj_df : pd.DataFrame, Optional
+    alpha_biomass_df : pd.DataFrame, Optional
     
     Returns
     -------
@@ -314,12 +312,12 @@ def get_div_obj_df(model_list: List["cobra.Model"]=None, target_obj_val: float=N
         summary_df if detailed_alpha_table is False
         alpha and normalized_biomass columns of summary_df otherwise
     """
-    if div_obj_df is None:
-        alpha_obj_df_list = iter_species(model_list, get_single_div_obj_df,
-                                target_obj_val=target_obj_val, potential_genes=potential_genes, precision=precision)
+    if alpha_biomass_df is None:
+        alpha_obj_df_list = iter_species(model_list, get_single_div_biomass_df,
+                                target_obj_val=target_normalized_biomass, potential_genes=potential_genes, precision=precision)
         result_df = pd.concat(alpha_obj_df_list, axis=1)
     else:
-        result_df = div_obj_df
+        result_df = alpha_biomass_df
     if detailed_alpha_table:
         return result_df
     return result_df.filter(regex='alpha|Normalized_biomass')
