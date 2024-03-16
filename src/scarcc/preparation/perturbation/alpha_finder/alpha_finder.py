@@ -145,16 +145,15 @@ class AlphaFinderConfig(ABC):
                                 ((alpha_range < .3) and (5<self.alpha_lb<10)) or
                                 ((alpha_range < 1.3) and (self.alpha_lb > 10)))
         alpha_range_req =  (alpha_range_narrow
-                            and (self.alpha_lb > 1.01)) # ever update lb and ub
+                            and (self.alpha_lb > 1.001)) # ever update lb and ub
         
         obj_req = (not any(0.3 < val < 0.8 for val in self.trace_obj_val) and # mrdA forever > 1 for low dose
                     (min(self.trace_obj_val) < min_attain) and
                     (max(self.trace_obj_val) > max_attain))
         
-        if alpha_range_narrow and all(val >1 for val in self.trace_obj_val): # small dose all > Normal
-            obj_req = True
-                
-        self.is_growth_switch = (alpha_range_req and obj_req) or (self.alpha_ub < 1.018)
+        self.is_growth_switch = (alpha_range_req and obj_req) # or (self.alpha_ub < 1.018) purT
+        if self.net_flux is not None and self.net_flux < 1e-8: # already without flux -> non-essential
+                self.is_growth_switch = False
         return self.is_growth_switch
     
     def find_feasible_alpha(self):

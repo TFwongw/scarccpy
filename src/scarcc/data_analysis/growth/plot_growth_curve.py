@@ -1,6 +1,5 @@
-from setup import convert_arg_to_list
 import itertools
-from flux_snapshot import get_SG_DG
+# from flux_snapshot import get_SG_DG
 
 def plot_coculture(Biomass_df, gene_list,culture ='coculture', species_id_list = ['E0', 'S0']):
     species_id_list = convert_arg_to_list(species_id_list)

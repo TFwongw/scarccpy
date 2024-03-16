@@ -1,4 +1,4 @@
-from scarcc.preparation.perturbation.alpha_finder import get_div_obj_df
+from scarcc.preparation.perturbation.alpha_finder import get_alpha_biomass_df
 from scarcc.preparation.metabolic_model import BasicModel
 import os
 def find_directory(start_directory, directory_name):
@@ -19,7 +19,7 @@ def find_directory(start_directory, directory_name):
 data_directory = find_directory(os.path.abspath(__file__), 'models')
 E0, S0, all_components = BasicModel(model_directory=data_directory, flux_weighting=True).load_ES_models()
 
-df_list = get_div_obj_df([S0], 0.5, potential_genes=['folA'])
+df_list = get_alpha_biomass_df([S0], 0.5, potential_genes=['folA'])
 print(df_list)
 
 

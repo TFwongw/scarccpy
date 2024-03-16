@@ -44,7 +44,7 @@ class LayoutConfig: # E0 S0 with modified
         # if self.E_model is None or self.S_model is None: # ? after modify Sij
         #     self.set_comets_model()
     
-    def set_comets_model(self):
+    def set_comets_model(self, E0, S0): # ? Use E0, S0 within context manager?
         def create_comets_model(model):
             comets_model = c.model(model)
             comets_model.open_exchanges()
@@ -52,7 +52,7 @@ class LayoutConfig: # E0 S0 with modified
             comets_model.obj_style = self.obj_style
             return comets_model
         # self.E_model, self.S_model = iter_species([self.E0, self.S0], create_comets_model)
-        self.E_model, self.S_model = [create_comets_model(model) for model in [self.E0, self.S0]]
+        self.E_model, self.S_model = [create_comets_model(model) for model in [E0, S0]]
         return self.E_model, self.S_model
 
     def create_common_media(self, species: List['cobra.Model'], carbon_source: str, carbon_source_val: float = None,
@@ -81,5 +81,5 @@ class LayoutConfig: # E0 S0 with modified
         # TODO: flux weight parameter ->10 
         Scarbon_source_val = self.carbon_source_val/10 if self.Smono_carbon_source=='bulk_ac_e' else self.carbon_source_val # ac_e as bulk 
         S0_layout = self.create_common_media([self.S_model], carbon_source=self.carbon_source['mono_S'], carbon_source_val=Scarbon_source_val) if self.mono_S else None
-        self.co_layout, self.monoE_layout, self.monoS_layout = co_layout, E0_layout, S0_layout     
+        self.co_layout, self.monoE_layout, self.monoS_layout = co_layout, E0_layout, S0_layout
         return co_layout, E0_layout, S0_layout

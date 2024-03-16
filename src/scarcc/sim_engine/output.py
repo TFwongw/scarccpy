@@ -101,6 +101,8 @@ class MethodDataFiller:
         def filename_format(data_directory, method, XG, df_type):
             if df_type == 'biomass':
                 return os.path.join(data_directory, f'BM_{XG}_{method}.csv')
+            if df_type == 'flux':
+                return os.path.join(data_directory, f'flux_{XG}_{method}.csv')
             if df_type == 'growth_rate':
                 return os.path.join(data_directory, f'gr_{XG}_{method}.csv')
             if df_type == 'normalized_growth_rate':
@@ -109,13 +111,13 @@ class MethodDataFiller:
                 return os.path.join(data_directory, f'drug_response_classification_{method}.csv')
             print('Unexpected df_type, check argument order')
 
-        for df_type in ['biomass', 'growth_rate', 'normalized_growth_rate', 'drug_response_classification']:
+        for df_type in ['biomass', 'growth_rate', 'flux', 'normalized_growth_rate', 'drug_response_classification']:
             for method, XG in itertools.product(self.methods, ['SG', 'DG']):
                 df = self.df_container[method, XG].get(df_type, None) # SG do not have classification key
                 if df is not None:
                     file_path = filename_format(self.data_directory, method, XG, df_type)
                     df.to_csv(file_path)
-                    logger.info(f'Saved data frames for {method, XG}: biomass, growth_rate, normalized_growth_rate, drug_response_classification in {file_path}')
+                    logger.info(f'Saved data frames for {method, XG}: biomass, flux, growth_rate, normalized_growth_rate, drug_response_classification in {file_path}')
 
         # write flux into one file
         for method in self.methods:

@@ -23,11 +23,11 @@ def sim_culture(layout, p=None, base = None):
         if len(layout) > 1:
             raise ValueError("The list 'layout' should contain only one element.")
         (layout,) = layout # one element unpacking from iter_species
-    
+
     sim = c.comets(layout, p)
     sim.working_dir = os.path.join(base, '') # make sure it is a directory instead of file
-    print(sim.working_dir)
-    
+    print('Simulation working directory', sim.working_dir)
+
     try:
         sim.run()
     except:
@@ -42,7 +42,7 @@ class SimulateCombinedAntibiotics(LayoutConfig):
     alpha_table: str
     base: str = None # base as __file__ or working directory
     checker_suffix: str = None
-    return_sim: bool = False
+    return_sim: bool = False # ? keep, only used in m2 coculture search
     ko: bool = False
 
     # default values for output
@@ -75,8 +75,8 @@ class SimulateCombinedAntibiotics(LayoutConfig):
                 alphas = [get_alphas_from_tab(model, genes=self.current_gene, alpha_table=self.alpha_table) for model in metabolic_model_list]
                 _ = [alter_Sij(model, alphas=alpha, genes=self.current_gene, ko=self.ko) for model, alpha in zip(metabolic_model_list, alphas)]
 
-            E_model, S_model = self.set_comets_model()
-            co_layout, E0_layout, S0_layout = self.set_layout_object()
+            self.set_comets_model(m_E0, m_S0)
+            self.set_layout_object()
 
             if self.co:
                 logger.debug(f'{self.p.all_params["maxCycles"]} co_p')
@@ -99,6 +99,7 @@ class SimulateCombinedAntibiotics(LayoutConfig):
 def read_alpha_table(data_directory, alpha_table_suffix):
     # check file exist
     # ? check alpht_table contains all SG
+    alpha_table_suffix = alpha_table_suffix.replace('alpha_table_', '').replace('.csv', '')
     file_dir = os.path.join(data_directory, f'alpha_table_{alpha_table_suffix}.csv')
     if os.path.isfile(file_dir):
         alpha_table = pd.read_csv(os.path.join(data_directory, f'alpha_table_{alpha_table_suffix}.csv'), index_col=0)
@@ -116,12 +117,15 @@ def concat_result(result_dict):
     def concat_df(key, df_list):
         if 'biomass' in key:
             return pd.concat(df_list, axis=1)
-        return pd.concat(df_list, axis=0)
+        flux_df = pd.concat(df_list)
+        flux_df = flux_df.set_index(['Gene_inhibition', 'Species', 'culture'])
+        return flux_df
     return {k: concat_df(k, v) for k, v in result_dict.items()}
 
 def check_files_exist(data_directory, file_paths):
     missing_files = []
     short_file_paths = file_paths.copy()
+    logger.info(f'checking files existatance: {file_paths}')
     file_paths = [os.path.join(data_directory, file_path) for file_path in file_paths]
     for short_file_path, file_path in zip(short_file_paths, file_paths):
         if not os.path.exists(file_path):
@@ -144,7 +148,7 @@ def check_SG_DG_format(SG_list, DG_list, generate_SG_list):
             DG_list = [ele.split('.') for ele in DG_list]
         new_SG_list = itertools.chain(*DG_list)
         SG_list = list(set(SG_list).union(set(new_SG_list)))
-    if 'Normal' not in SG_list:
+    if SG_list is not None and 'Normal' not in SG_list:
         SG_list = ['Normal'] + SG_list
     return SG_list, DG_list
 
@@ -164,7 +168,7 @@ def run_sim_workflow(method_list, data_directory, SG_list=None, DG_list=None, ge
             gene_list_dict[XG] = XG_list
         else:
             if XG == 'SG':
-                required_files.append(f'BM_{XG}_{method}.csv' for method in method_list)
+                required_files.extend([f'BM_{XG}_{method}.csv' for method in method_list])
     check_files_exist(data_directory, required_files)
     alpha_table_dict = {method: read_alpha_table(data_directory, method) for method in method_list}
 
@@ -179,6 +183,17 @@ def run_sim_workflow(method_list, data_directory, SG_list=None, DG_list=None, ge
     df_container = {key: unpack_future_result_per_key(result_list) for key, result_list in df_container.items()} # list of [biomass, flux] into {biomass : biomass_list, flux : flux_list}
     df_container = {k: concat_result(sub_container) for k, sub_container in df_container.items()} # column-wise for biomass, row-wise for flux data frame concatenation
 
+    if SG_list is None: # fill SG info from files
+        # TODO: set of SG list less than DG_list required
+        for method in method_list:
+            biomass_path = os.path.join(data_directory, f'BM_SG_{method}.csv')
+            flux_path = os.path.join(data_directory, f'flux_SG_{method}.csv')
+            print('reading results from existing files')
+            df_container[method, 'SG'] = {}
+            df_container[method, 'SG']['biomass'] = pd.read_csv(biomass_path, index_col=0)
+            df_container[method, 'SG']['flux'] = pd.read_csv(flux_path, index_col=['Gene_inhibition', 'Species', 'culture'])
+
+    # return df_container
     mdf = MethodDataFiller(df_container, data_directory)
     mdf.fill_container()
     mdf.write_to_csv()

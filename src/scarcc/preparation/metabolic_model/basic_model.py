@@ -48,7 +48,7 @@ class BasicModel:
     flux_weighting: bool = None
     ac_scale: float = 10
     gal_scale: float = 3
-    c_limiting_conc = 2 # corresponding to maximum uptake rate in carbon limited
+    c_limiting_conc = 3 # corresponding to maximum uptake rate in carbon limited
     met_limiting_conc = 10 # DO not search monoculture alpha with met_limiting_conc
     
     def __post_init__(self):
@@ -59,7 +59,8 @@ class BasicModel:
         nutrient_medium = initialize_medium()
         self.E0.medium, self.S0.medium = nutrient_medium, nutrient_medium        
         change_medium(self.E0, ['EX_lcts_e', 'EX_met__L_e'], [self.c_limiting_conc, self.met_limiting_conc])
-        change_medium(self.S0, 'EX_gal_e', self.c_limiting_conc)
+        change_medium(self.S0, 'EX_ac_e', self.c_limiting_conc)
+        # change_medium(self.S0, 'EX_gal_e', self.c_limiting_conc)
         return None
 
     def implement_flux_weighting(self):
