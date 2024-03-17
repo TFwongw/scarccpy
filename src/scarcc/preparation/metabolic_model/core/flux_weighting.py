@@ -16,11 +16,11 @@ def rename_ac_in_bulk(model, id):
 def weight_carbon_byproduct(E0, S0, all_components, ac_scale=None, gal_scale=None):
     if gal_scale is not None:
         query_gal = ['gal_p','gal_c']
-        if gal_scale > 1:
-            gal_scale = -1*(1-1/gal_scale) 
+        gal_scale = -1*(1-1/gal_scale) if gal_scale > 1 else -1*(1-gal_scale) # ensure increase in cose
         
         rxns_to_scale = get_links_component(E0, query_gal, all_components, id_only=False, is_prod_only=True) # ['GALt2pp', 'GAL1PPpp', 'GALabcpp', 'GALS3', 'LACZpp', 'GALM2pp', 'LACZ'] are scaled
         logger.debug('reactions in gal scaled: %s', rxns_to_scale)
+        logger.debug('gal_scale =', gal_scale)
         for rxn in rxns_to_scale:
             # TODO: only scale LACZpp is desirable, make gal secretion similar to knockout
             metab_to_scale = rxn.metabolites
@@ -31,9 +31,9 @@ def weight_carbon_byproduct(E0, S0, all_components, ac_scale=None, gal_scale=Non
         add_scale = ac_scale-1 if ac_scale>=1 else ac_scale
         
         # 0.1 ac_p + 10 h_p <=> 10 ac_c + 10 h_c
-        for rxn in ['ACt2rpp']: 
+        for rxn in ['ACt2rpp']:
             if isinstance(rxn, str):
                 rxn = get_component(E0, rxn, all_components)
             if not 'EX_' in rxn.id:
                 metab_to_scale = rxn.metabolites
-                rxn.add_metabolites({k:v*add_scale for k,v in metab_to_scale.items()}) 
+                rxn.add_metabolites({k:v*add_scale for k,v in metab_to_scale.items()})
