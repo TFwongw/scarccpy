@@ -12,7 +12,7 @@ setup(
     package_dir = {"": "src"},
     python_requires='>=3.10',
     install_requires=[
-        'pandas<2.0'
+        'pandas<2.0',
         'matplotlib',
         'seaborn>0.11',
         'cobra',
