@@ -16,6 +16,7 @@ release = '0.0.1'
 
 extensions = [
     "nbsphinx",
+    'sphinx_rtd_theme',
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
@@ -30,5 +31,13 @@ numpydoc_show_class_members = False
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+
+html_context = {
+    'display_github': True,
+    'github_user': 'TFwongw',
+    'github_repo': 'scarccpy',
+    'github_version': 'main/docs/',
+}
+
