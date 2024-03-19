@@ -2,31 +2,68 @@ import numpy as np
 import pandas as pd
 import itertools
 import os
+import ast
 
 from .monoculture import MonocultureAlphaFinder
 
+def read_normalized_growth(normalized_growth_file_path, model_list):
+    def sub_id_to_model(model_id):
+        for model in model_list:
+            if model.id == model_id:
+                return model
+        return model_id
+
+    def convert_to_list(l):
+        return l if isinstance(l, list) else ast.literal_eval(l)
+
+    normalized_growth = pd.read_csv(normalized_growth_file_path, index_col=0)
+    normalized_growth.columns = [sub_id_to_model(id) 
+                                    for id in normalized_growth.columns]
+    normalized_growth = normalized_growth.applymap(convert_to_list)
+    return normalized_growth
+
 class CheckerboardAlphaFinder():
-    def __init__(self, response_record, data_directory = None, **maf_kwargs) -> None:
-        self.response_record = response_record
-        self.target_gene_list = list(response_record.keys())
-        self.species_list = list(response_record[self.target_gene_list[0]].keys())
-        self.n_levels = len(self.response_record[self.target_gene_list[0]][self.species_list[0]]['nbiomass_x'])
+    def __init__(self, response_record=None, normalized_growth=None, data_directory = None, **maf_kwargs) -> None:
+        self.response_record = self.set_response_record_format(response_record, normalized_growth)
+        self.target_gene_list = list(self.response_record.keys())
+        self.species_list = list(self.response_record[self.target_gene_list[0]].keys())
+        
+        # checkerboard levels
+        nbiomass_x = self.response_record[self.target_gene_list[0]][self.species_list[0]]['nbiomass_x']
+        self.n_levels = len(nbiomass_x)
         self.checker_lvs = self.construct_checker_lvs()
         self.result_dict = {}
-        self.maf_kwargs = maf_kwargs
         self.data_directory = data_directory
-        if 'acceptance_threshold_upper' not in self.maf_kwargs:
-            self.maf_kwargs['acceptance_threshold_upper'] = .995
-        if 'acceptance_threshold_lower' not in self.maf_kwargs:
-            self.maf_kwargs['acceptance_threshold_lower'] = 1.001
-        if 'precision' not in self.maf_kwargs:
-            self.maf_kwargs['precision'] = 3
-        print(self.n_levels)
+        # default kwargs passed to MonocultureAlphaFinder
+        self.maf_kwargs = maf_kwargs
+        self.set_default_kwargs('acceptance_threshold_upper', .995)
+        self.set_default_kwargs('acceptance_threshold_lower', 1.001)
+        self.set_default_kwargs('precision', 3)
+        # output
+        self.alpha_table = None
+
+    @staticmethod
+    def set_response_record_format(response_record, normalized_growth):
+        if response_record is None:
+            response_record = normalized_growth.to_dict(orient='index')
+            response_record = {
+                current_gene: {
+                    model: {'nbiomass_x': nbiomass_list}
+                    for model, nbiomass_list in model_dict.items()
+                }
+                for current_gene, model_dict in response_record.items()
+            }
+        return response_record
+
     @staticmethod
     def get_new_response_record(**kwargs):
         maf = MonocultureAlphaFinder(**kwargs)
         maf.find_feasible_alpha()
         return maf
+
+    def set_default_kwargs(self, key, default_value):
+        if key not in self.maf_kwargs:
+            self.maf_kwargs[key] = default_value
 
     def fill_dict(self, model, current_gene, nbiomass_x):
         nbiomass_lv = float(format(nbiomass_x, '.2f'))
@@ -46,7 +83,7 @@ class CheckerboardAlphaFinder():
                 response_record=self.response_record, **self.maf_kwargs)
             return maf
         return self.response_record
-    
+
     def construct_checker_lvs(self):
         checker_lvs = pd.DataFrame()
         MIC_levels = np.arange(0, self.n_levels)
@@ -55,14 +92,14 @@ class CheckerboardAlphaFinder():
         checker_lvs['lv1'] = checker_lvs['lv_pairs'].apply(lambda x: x[0])
         checker_lvs['lv2'] = checker_lvs['lv_pairs'].apply(lambda x: x[1])
         return checker_lvs
-    
+
     def match_alpha_lvs(self, current_gene):
         species_alpha_table = {}
         for Species in self.species_list:
             record_in_gene_species = self.response_record[current_gene][Species]
             result_dict = {
             ith: {
-                f'alpha': record_in_gene_species['response'][float(format(nbiomass, '.2f'))]['search_alpha'],
+                'alpha': record_in_gene_species['response'][float(format(nbiomass, '.2f'))]['search_alpha'],
                 'lv': ith,
                 'Gene_inhibition': current_gene,
                 'normalized_biomass': nbiomass}
@@ -75,7 +112,7 @@ class CheckerboardAlphaFinder():
         for sp1, sp2 in itertools.combinations(outer_dict.keys(), 2):
             self.result_dict[current_gene, sp1, sp2] = (
                 self.checker_lvs.merge(outer_dict[sp1], left_on='lv1', right_on=f'{sp1.id}_lv')
-                .merge(outer_dict[sp2], left_on=f'lv2', right_on=f'{sp2.id}_lv', suffixes=(f'_{sp1}', f'_{sp2}'))
+                .merge(outer_dict[sp2], left_on='lv2', right_on=f'{sp2.id}_lv', suffixes=(f'_{sp1}', f'_{sp2}'))
                 .drop(columns=['lv1', 'lv2']))
             self.result_dict[current_gene, sp1, sp2]['Gene_inhibition'] = current_gene
             self.result_dict[current_gene, sp1, sp2].set_index('Gene_inhibition', inplace=True)
@@ -90,7 +127,7 @@ class CheckerboardAlphaFinder():
                     IC_lv = float(format(nbiomass, '.2f'))
                     alpha_lvs.update({nbiomass: ss_dict['response'][IC_lv]['search_alpha']})
 
-        [self.process_record_in_gene(current_gene) for current_gene in self.target_gene_list]
+        _ = [self.process_record_in_gene(current_gene) for current_gene in self.target_gene_list]
         self.alpha_table = pd.concat(self.result_dict.values(), axis=0).sort_values('lv_pairs')
 
         if self.data_directory is not None:
