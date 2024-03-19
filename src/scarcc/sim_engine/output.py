@@ -5,6 +5,7 @@ import logging
 
 from scarcc.data_analysis import convert_po_col
 from scarcc.data_analysis.growth.growth_rate import get_growth_rate_df
+from scarcc.preparation.target_gene.gene_format_handler import GeneFormatHandler
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +14,7 @@ def merge_single_gene_gr(sg_df, dg_df):
     # ? Normal col && normal str correspondence in dict converion first for checker board?
     
     dg_df = pd.concat([sg_df.loc[['Normal']], dg_df]).rename(index={'Normal': 'Normal.Normal'})
-    dg_df['First_gene'], dg_df['Second_gene'] = list(zip(*dg_df.index.str.split('.'))) # ? Need handel checkerboard, wirte into function
+    dg_df['First_gene'], dg_df['Second_gene'] = list(zip(*dg_df.index.map(lambda x: GeneFormatHandler(x).SG)))
     dg_df.rename(index={'Normal.Normal': 'Normal'}, inplace=True)
     
     dg_df = (dg_df
