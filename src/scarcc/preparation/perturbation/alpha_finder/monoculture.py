@@ -130,16 +130,22 @@ class MonocultureAlphaFinder(AlphaFinderConfig):
             if interval_abs_diff <= previous_min:
                 is_lowest_abs_diff = True
 
+        fill_alpha = self.search_alpha
+        if obj_val_interval > .99:
+            fill_alpha, obj_val = 1, 1
+
         if not record:
             self.response_record[self.current_gene][self.model]['response'][obj_val_interval] = {
-                'search_alpha' : self.search_alpha,
+                'search_alpha' : fill_alpha,
                 'precise_obj_val' : obj_val, 
                 'interval_abs_diff' : interval_abs_diff,
                 'target_abs_diff' : abs(obj_val - self.target_obj_val)}
+
         return is_lowest_abs_diff
 
     def eval_alpha_fun(self):
         """Evaluate the current alpha and update the optimal dataframe"""
+
         _, obj_val, summary_df = Sij_biomass(self.model, self.search_alpha, self.current_gene)
         
         if(self.opt_df is None and summary_df['Net_Flux'][0]<1e-8): # reinitialize if the first alpha to search gives zero flux
@@ -151,7 +157,7 @@ class MonocultureAlphaFinder(AlphaFinderConfig):
                         obj_val<self.target_obj_val*self.acceptance_threshold_lower or obj_val>1.2) # overinhibition, search alpha too high 
         
         self.found_alpha = self.is_found(self.search_alpha, self.alpha_lb, self.alpha_ub, self.precision)
-        
+
         # update optimal df
         self.net_flux = summary_df['Net_Flux'][0]
         net_flux_req = (self.net_flux>0 or obj_val>self.norm_obj_val*.1)
@@ -170,7 +176,8 @@ class MonocultureAlphaFinder(AlphaFinderConfig):
         Tuple
             Series of alpha, biomass, and the optimal dataframe"""
         opt_df = self.opt_df
-        opt_df['is_growth_switch'] = self.classify_growth_switch()
+        if not self.target_normalized_biomass > .99:
+            opt_df['is_growth_switch'] = self.classify_growth_switch()
         logger.debug('Gene: %s with alpha %s and obj_val %s', self.current_gene, opt_df['alpha'][0], opt_df[f'biomass'][0])
         opt_df.insert(loc=2, column='Normalized_biomass', value=opt_df['biomass']/self.norm_obj_val)
         opt_df.columns = [f'{self.model.id}_'+element for element in opt_df.columns]

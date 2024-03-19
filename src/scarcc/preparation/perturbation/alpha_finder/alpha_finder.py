@@ -175,6 +175,7 @@ class AlphaFinderConfig(ABC):
             return ((not self.found_alpha) or (self.i_iter<2)
                     or (self.alpha_lb < 1.01 and 1.018< self.alpha_ub)) # force iter -ensure optimal
 
+
         if self.ko_intercepted: # req run ko_gr first, otherwise cannot catch
             logger.debug(f'Intercept Non-essential: {self.current_gene}, calculating with current alpha')
             return self.out_fun() # sim_culture with current alpha_table already ran
@@ -182,9 +183,10 @@ class AlphaFinderConfig(ABC):
         if not self.ever_eval:
             self.eval_alpha_fun() # initial ko is without alpha, only used for identify gr_ko
 
-        stop = not (self.alpha_lb < self.search_alpha < self.alpha_ub)
+        # stop = not (self.alpha_lb < self.search_alpha < self.alpha_ub) and 
         
-        while eval_continue() and not stop: 
+        # while eval_continue() and not stop: 
+        while eval_continue(): 
             self.search_alpha, self.alpha_lb, self.alpha_ub = self.get_next_alpha(
                 self.search_alpha, self.alpha_lb, self.alpha_ub, self.is_new_ub,
                 self.exp_leap)
