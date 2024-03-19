@@ -68,12 +68,18 @@ class SimulateCombinedAntibiotics(LayoutConfig):
         except:
             print(f'Failed to remove {self.working_dir}, needs remove files manually')
 
+    def checker_adjustment(self):
+        self.biomass_df = self.biomass_df.add_suffix(self.checker_suffix)
+        self.flux_df.index = [ele + self.checker_suffix for ele in self.flux_df.index]
+
     def get_BM_df(self):
         with self.E0 as m_E0, self.S0 as m_S0:
             metabolic_model_list = [m_E0, m_S0]
             if 'Normal' not in self.current_gene:
-                alphas = [get_alphas_from_tab(model, genes=self.current_gene, alpha_table=self.alpha_table) for model in metabolic_model_list]
-                _ = [alter_Sij(model, alphas=alpha, genes=self.current_gene, ko=self.ko) for model, alpha in zip(metabolic_model_list, alphas)]
+                alphas = [get_alphas_from_tab(model, genes=self.current_gene, alpha_table=self.alpha_table)
+                            for model in metabolic_model_list]
+                _ = [alter_Sij(model, alphas=alpha, genes=self.current_gene, ko=self.ko)
+                        for model, alpha in zip(metabolic_model_list, alphas)]
 
             self.set_comets_model(m_E0, m_S0)
             self.set_layout_object()
@@ -89,10 +95,15 @@ class SimulateCombinedAntibiotics(LayoutConfig):
                     monoculture_to_run[self.E_model] = self.monoE_layout
                 if self.mono_S:
                     monoculture_to_run[self.S_model] = self.monoS_layout
-                self.mono_sim_object_list = [sim_culture(layout, p=self.p, base=self.working_dir) for layout in monoculture_to_run.values()]
+                self.mono_sim_object_list = [sim_culture(layout, p=self.p, base=self.working_dir)
+                                                for layout in monoculture_to_run.values()]
                 self.sim_object_list.extend(self.mono_sim_object_list)
-            
-        self.biomass_df, self.flux_df = extract_biomass_flux_df(self.E0, self.S0, self.sim_object_list, alpha_table=self.alpha_table, current_gene=self.current_gene)
+
+        self.biomass_df, self.flux_df = extract_biomass_flux_df(
+            self.E0, self.S0, self.sim_object_list,
+            alpha_table=self.alpha_table, current_gene=self.current_gene)
+        if self.checker_suffix:
+            self.checker_adjustment()
         self.cleanup()
         return self.biomass_df, self.flux_df
 
@@ -132,7 +143,9 @@ def check_files_exist(data_directory, file_paths):
             missing_files.append(short_file_path)
     if missing_files:
         if any('SG' in file_path for file_path in missing_files):
-            print('Required files for SG are missing for calculation of DG data frames, please check the file paths or set generate_SG_list to True in run_sim_workflow')
+            print('Required files for SG are missing for calculation of DG data frames, '
+                    'please check the file paths or set generate_SG_list to True in '
+                    'run_sim_workflow')
         raise FileNotFoundError(f'Files {missing_files} do not exist in {data_directory}')
 
 def check_SG_DG_format(SG_list, DG_list, generate_SG_list):

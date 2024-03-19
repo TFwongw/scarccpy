@@ -1,8 +1,11 @@
 import re
 from dataclasses import dataclass
 from typing import Dict, Union, List
-import pandas as pd
 import itertools
+import pandas as pd
+
+import cobra
+import cometspy as c
 
 from scarcc.data_analysis.flux.flux_snapshot import adjust_flux_df
 from scarcc.data_analysis import get_desired_cycle
@@ -13,7 +16,7 @@ class SimObjectBase:
     # checkerboard handled in adjust_flux_df automatically
     E0: 'cobra.Model'
     S0: 'cobra.Model'
-    sim_object: 'comets.solution'
+    sim_object: 'c.solution'
     alpha_table: pd.DataFrame
     current_gene: str
 
@@ -43,7 +46,8 @@ def get_flux_snapshot(sob: SimObjectBase, model: 'cobra.Model' = None): # to map
     snap_shot = flux_df.query('cycle == @snap_shot_cycle')
     return snap_shot
 
-def extract_biomass_flux_df(E0: 'cobra.Model', S0: 'cobra.Model', sim_object_list: List['comets.solution'], alpha_table: pd.DataFrame, current_gene: str):
+def extract_biomass_flux_df(E0: 'cobra.Model', S0: 'cobra.Model', sim_object_list: List['c.solution'],
+                            alpha_table: pd.DataFrame, current_gene: str):
     # function for construct class and extraction
     def extract_biomass_flux_df_per_sim(sob: SimObjectBase) -> Dict[str, Union[pd.DataFrame, List]]: # list concat all together altogether for efficiency
         # this is the output to the get_BM_df function
@@ -70,7 +74,7 @@ def rename_columns(df):
            for ele in df.columns]
     return(df.columns)
     
-def gene_index_culture_col_df(analysis_df): 
+def gene_index_culture_col_df(analysis_df):
     analysis_df['Gene_inhibition'] =  ['.'.join(map(str, convert_arg_to_list(l))) for l in analysis_df.Gene_inhibition] # SG, DG, checkerboard g1.g2 form
     analysis_df = analysis_df.set_index('Gene_inhibition')
     return analysis_df
