@@ -18,4 +18,9 @@ setup(
         'cobra',
         'cometspy'
     ],
+    extras_require={
+        'docs': [
+            'sphinx_rtd_theme',
+        ],
+    },
 )
