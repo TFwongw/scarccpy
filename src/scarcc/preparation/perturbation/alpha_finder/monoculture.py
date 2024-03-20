@@ -183,8 +183,8 @@ class MonocultureAlphaFinder(AlphaFinderConfig):
         opt_df.columns = [f'{self.model.id}_'+element for element in opt_df.columns]
         opt_df['Gene_inhibition'] = self.current_gene
         self.opt_df = opt_df
-        return (float(opt_df[f'{self.model.id}_alpha']),
-                float(opt_df[f'{self.model.id}_Normalized_biomass']),
+        return (float(opt_df[f'{self.model.id}_alpha'].iloc[0]),
+                float(opt_df[f'{self.model.id}_Normalized_biomass'].iloc[0]),
                 opt_df) # alpha_feasible, and upper bound of alpha
 
 def get_summary_df(model, alpha, obj_val, rct_ids = 'DHFR', sol_sol = None) -> pd.DataFrame: 

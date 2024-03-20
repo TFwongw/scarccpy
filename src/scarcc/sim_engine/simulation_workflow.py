@@ -39,9 +39,9 @@ def sim_culture(layout, p=None, base = None):
 class SimulateCombinedAntibiotics(LayoutConfig):
     current_gene: str
     p: 'comets.p'
-    alpha_table: str
+    alpha_table: pd.DataFrame
     base: str = None # base as __file__ or working directory
-    checker_suffix: str = None
+    checker_suffix: str = ''
     return_sim: bool = False # ? keep, only used in m2 coculture search
     ko: bool = False
 
@@ -55,11 +55,11 @@ class SimulateCombinedAntibiotics(LayoutConfig):
     def __post_init__(self):
         super().__post_init__()
         self.current_gene = convert_arg_to_list(self.current_gene)
-
-        path_elements = [self.base, 'SimChamber', '.'.join(self.current_gene)] if 'SimChamber' not in self.base else [self.base, '.'.join(self.current_gene)]
-        print(path_elements)
+        gene_chamber = '.'.join(self.current_gene) + self.checker_suffix
+        path_elements = [self.base, 'SimChamber', gene_chamber] if 'SimChamber' not in self.base else [self.base, gene_chamber]
         self.working_dir = os.path.join(*path_elements) # '' as specification of directory where COMETS files are stored
         os.makedirs(self.working_dir, exist_ok=True)
+        self.alpha_table.columns = [ele.replace('_alpha', '') for ele in self.alpha_table.columns] # ! test this
         
         # filepath
     def cleanup(self):
@@ -69,8 +69,8 @@ class SimulateCombinedAntibiotics(LayoutConfig):
             print(f'Failed to remove {self.working_dir}, needs remove files manually')
 
     def checker_adjustment(self):
-        self.biomass_df = self.biomass_df.add_suffix(self.checker_suffix)
-        self.flux_df.index = [ele + self.checker_suffix for ele in self.flux_df.index]
+        self.biomass_df = self.biomass_df.add_suffix(self.checker_suffix) # '_' already included in sub_alpha_dict keys
+        self.flux_df['Gene_inhibition'] = self.flux_df['Gene_inhibition'] + self.checker_suffix
 
     def get_BM_df(self):
         with self.E0 as m_E0, self.S0 as m_S0:
@@ -170,7 +170,7 @@ def get_simulation_output(**kwargs):
     return simulation.get_BM_df()
 
 def run_sim_workflow(method_list, data_directory, SG_list=None, DG_list=None, generate_SG_list=False, max_cpus=12, **kwargs):
-    SG_list, DG_list = check_SG_DG_format(SG_list, DG_list, generate_SG_list) 
+    SG_list, DG_list = check_SG_DG_format(SG_list, DG_list, generate_SG_list)
     available_cpus = min(os.cpu_count(), max_cpus)
     method_list = [ele.replace('alpha_table_', '') for ele in method_list]
 
@@ -184,7 +184,7 @@ def run_sim_workflow(method_list, data_directory, SG_list=None, DG_list=None, ge
                 required_files.extend([f'BM_{XG}_{method}.csv' for method in method_list])
     check_files_exist(data_directory, required_files)
     alpha_table_dict = {method: read_alpha_table(data_directory, method) for method in method_list}
-
+    
     task_dict = {}
     with concurrent.futures.ProcessPoolExecutor(max_workers=available_cpus) as executor:
         for method, XG in itertools.product(method_list, gene_list_dict.keys()):

@@ -16,7 +16,6 @@ def merge_single_gene_gr(sg_df, dg_df):
     dg_df = pd.concat([sg_df.loc[['Normal']], dg_df]).rename(index={'Normal': 'Normal.Normal'})
     dg_df['First_gene'], dg_df['Second_gene'] = list(zip(*dg_df.index.map(lambda x: GeneFormatHandler(x).SG)))
     dg_df.rename(index={'Normal.Normal': 'Normal'}, inplace=True)
-    
     dg_df = (dg_df
                 .merge(sg_df, left_on='First_gene', right_index=True, suffixes=['','_First_gene'])
                 .merge(sg_df, left_on='Second_gene', right_index=True, suffixes=['','_Second_gene'])
@@ -57,6 +56,9 @@ class DrugCombinationEffectClassification:
     # construct a sub her, normalize df
     def get_gr_df(self):
         sg_df = get_growth_rate_df(self.dfs_in_SG_layer['biomass'])
+        if 'Normal' not in sg_df.index:
+            Normal_row = sg_df.loc[[index for index in sg_df.index if '0.0' in index][0]]
+            sg_df.loc['Normal'] = Normal_row
         self.dfs_in_SG_layer['growth_rate'] = reorder_columns(sg_df)
         if self.generate_DG:
             dg_df = get_growth_rate_df(self.dfs_in_DG_layer['biomass'])
@@ -68,12 +70,13 @@ class DrugCombinationEffectClassification:
     def get_normalized_gr_df(self):
         # sg_df = self.dfs_in_SG_layer['growth_rate'].copy() # reassignment fo not affect non-normalized gr
         sg_df = self.dfs_in_SG_layer['growth_rate']
-        sg_df = sg_df.div(sg_df.loc['Normal'])
+        Normal_row = sg_df.loc['Normal']
+        sg_df = sg_df.div(Normal_row)
         self.dfs_in_SG_layer['normalized_growth_rate'] = reorder_columns(sg_df)
             
         if self.generate_DG:
             dg_df = self.pure_dg_gr
-            dg_df = dg_df.div(sg_df.loc['Normal'])
+            dg_df = dg_df.div(Normal_row)
             dg_df = merge_single_gene_gr(sg_df, dg_df)
             dg_df = add_additive_and_drug_comb_response(dg_df)
             self.dfs_in_DG_layer['normalized_growth_rate'] = reorder_columns(dg_df)
@@ -123,5 +126,6 @@ class MethodDataFiller:
         # write flux into one file
         for method in self.methods:
             flux_df_full = pd.concat([self.df_container[method, XG]['flux'] for XG in self.XGs])
-            flux_df_full.to_csv(os.path.join(self.data_directory, f'flux_analysis_{method}.csv'))
-            print(f'biomass, growth_rate, normalized_growth_rate, drug_response_classification, flux data derived from {method} were saved in {self.data_directory}')
+            file_path = os.path.join(self.data_directory, f'flux_analysis_{method}.csv')
+            flux_df_full.to_csv(file_path)
+            print(f'biomass, growth_rate, normalized_growth_rate, drug_response_classification, flux data derived from {method} were saved in {file_path}')

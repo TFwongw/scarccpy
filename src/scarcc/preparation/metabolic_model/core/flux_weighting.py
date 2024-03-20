@@ -19,8 +19,7 @@ def weight_carbon_byproduct(E0, S0, all_components, ac_scale=None, gal_scale=Non
         gal_scale = -1*(1-1/gal_scale) if gal_scale > 1 else -1*(1-gal_scale) # ensure increase in cose
         
         rxns_to_scale = get_links_component(E0, query_gal, all_components, id_only=False, is_prod_only=True) # ['GALt2pp', 'GAL1PPpp', 'GALabcpp', 'GALS3', 'LACZpp', 'GALM2pp', 'LACZ'] are scaled
-        logger.debug('reactions in gal scaled: %s', rxns_to_scale)
-        logger.debug('gal_scale =', gal_scale)
+        logger.debug('reactions in gal scaled: %s, gal_scale: %s', rxns_to_scale, gal_scale)
         for rxn in rxns_to_scale:
             # TODO: only scale LACZpp is desirable, make gal secretion similar to knockout
             metab_to_scale = rxn.metabolites

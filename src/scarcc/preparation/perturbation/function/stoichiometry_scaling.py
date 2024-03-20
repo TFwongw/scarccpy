@@ -46,16 +46,16 @@ def separate_reaction(model: "Model", reaction_id: str, alpha: float) -> List:
     -------
     list of reaction ids that are regulated by the target genes
     """
-    (lb, ub) = model.reactions.get_by_id(reaction_id).bounds 
+    (lb, ub) = model.reactions.get_by_id(reaction_id).bounds
     rxn_ids = [reaction_id] #? 
     if(lb < 0 and ub !=0): # only perform if reaction is bidirectional
-        rev_reaction = model.reactions.get_by_id(reaction_id).copy() # copy of target reaction 
+        rev_reaction = model.reactions.get_by_id(reaction_id).copy() # copy of target reaction
         rev_reaction.id = f'{reaction_id}_v1' # redefine id for copy of reaction
         model.add_reactions([rev_reaction]) # add to model
     
-        scale_reaction(model, rev_reaction.id, alpha, direction='backward')      
+        scale_reaction(model, rev_reaction.id, alpha, direction='backward')
         
-        rxn_ids.append(rev_reaction.id) # list of id for reaction and reaction_v1 
+        rxn_ids.append(rev_reaction.id) # list of id for reaction and reaction_v1
     scale_reaction(model, reaction_id, alpha, direction='forward')
     return(rxn_ids)
 

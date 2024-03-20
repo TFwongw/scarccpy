@@ -17,7 +17,7 @@ def read_normalized_growth(normalized_growth_file_path, model_list):
         return l if isinstance(l, list) else ast.literal_eval(l)
 
     normalized_growth = pd.read_csv(normalized_growth_file_path, index_col=0)
-    normalized_growth.columns = [sub_id_to_model(id) 
+    normalized_growth.columns = [sub_id_to_model(id)
                                     for id in normalized_growth.columns]
     normalized_growth = normalized_growth.applymap(convert_to_list)
     return normalized_growth
