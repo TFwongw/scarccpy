@@ -21,6 +21,7 @@ Welcome to scarcc's documentation!
 
    fba_alpha_derivation
    simulation_workflow
+   checkerboard_simulation
 
 .. toctree::
    :numbered:
