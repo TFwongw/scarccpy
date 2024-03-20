@@ -26,7 +26,6 @@ def adjust_flux_df(model, df, gene_combo: list, alpha_table:pd.DataFrame): # mod
     # Don't use v1 cols to indicate gene_inhibition, will skip unidirectional reaction
     def query_alpha(gene_combo, alpha_table):
         splitted = gene_combo.split('.')
-        print(splitted)
         if len(splitted) <= 2: # not checkerboard 
             gcomb_alpha = {gene: alpha_table.loc[gene, f'{model.id}'] for gene in gene_combo.split('.')}
             return gcomb_alpha, alpha_table
@@ -44,8 +43,6 @@ def adjust_flux_df(model, df, gene_combo: list, alpha_table:pd.DataFrame): # mod
                 gcomb_alpha.update({current_gene:
                                     alpha_table.loc[current_gene, f'{model.id}']})
             return gcomb_alpha, alpha_table
-
-    print(gene_combo)
 
     if 'Normal' not in gene_combo:
 #         gene_combo_dict = get_gcomb_alpha_dict(gene_combo) 

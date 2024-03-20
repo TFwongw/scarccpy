@@ -45,8 +45,8 @@ def find_directory(desired_directory_name, script_filepath): # start with where 
         script_filepath = os.path.dirname(script_filepath)
     desired_directory = os.path.join(script_filepath, desired_directory_name)
     if not os.path.isdir(desired_directory):
-        if desired_directory_name == 'Data':
-            print(f'make data directory at script level: {desired_directory}')
+        if desired_directory_name != 'models':
+            print(f'make directory at script level: {desired_directory}')
             os.makedirs(desired_directory)
         else:
             raise FileNotFoundError(f'Directory {desired_directory_name} not exist in {script_filepath}, please make the directory with desired files included.')

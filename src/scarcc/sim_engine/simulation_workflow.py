@@ -26,7 +26,6 @@ def sim_culture(layout, p=None, base = None):
 
     sim = c.comets(layout, p)
     sim.working_dir = os.path.join(base, '') # make sure it is a directory instead of file
-    print('Simulation working directory', sim.working_dir)
 
     try:
         sim.run()
