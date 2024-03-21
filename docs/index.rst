@@ -6,7 +6,7 @@ Welcome to scarcc's documentation!
 ==================================
 
 For installation instructions, please see `INSTALL.rst
-<https://github.com/TFwongw/scarccpy/INSTALL.rst>`_.
+<https://github.com/TFwongw/scarccpy/blob/main/INSTALL.rst>`_.
 
 Example notebooks can be download at `docs
 <https://github.com/TFwongw/scarccpy/tree/main/docs>`_. 
