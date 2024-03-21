@@ -16,7 +16,8 @@ setup(
         'matplotlib',
         'seaborn>0.11',
         'cobra',
-        'cometspy'
+        'cometspy',
+        'scipy'
     ],
     extras_require={
         'docs': [

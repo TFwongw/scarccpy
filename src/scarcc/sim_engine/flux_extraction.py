@@ -42,7 +42,7 @@ def get_flux_snapshot(sob: SimObjectBase, model: 'cobra.Model' = None): # to map
     desired_cycle = get_desired_cycle(biomass_df)
     # return desired_cycle
     # TODO: snapshot handler
-    snap_shot_cycle = int(desired_cycle.cycle_max_gr)
+    snap_shot_cycle = int(desired_cycle.cycle_max_gr.iloc[0])
     snap_shot = flux_df.query('cycle == @snap_shot_cycle')
     return snap_shot
 

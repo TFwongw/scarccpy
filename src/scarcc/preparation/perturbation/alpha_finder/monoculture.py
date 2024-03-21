@@ -346,6 +346,9 @@ def get_alpha_biomass_df(model_list=None, potential_genes=None, detailed_alpha_t
         result_df = pd.concat(result.values(), axis=1)
         return result_df
     
+    if len(potential_genes) == 1 and isinstance(potential_genes, str):
+        raise ValueError('potential_genes should be formate as list of list for DG or list of str for SG')
+
     result_df = get_result_df() if alpha_biomass_df is None else alpha_biomass_df
     result_df = get_alpha_obj_df(result_df)
     return handle_output(result_df)

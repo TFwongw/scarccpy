@@ -30,7 +30,7 @@ def main():
 
     from scarcc.sim_engine.simulation_workflow import run_sim_workflow
 
-    SG_list = ['folA', 'folP'] # Optional, Example: ['folA', 'folP', 'folC']
+    SG_list = ['folA', 'folP'] # Optional, if running on the same set or subset of single gene with biomass, flux data exists in Data
     DG_list = [['folA', 'folP']] # Optional, Example: [['folA', 'folP'], ['folC', 'folP'], ['folA', 'folC']]
     method_list = ['m1']
     simulation_kwargs = {
@@ -41,7 +41,7 @@ def main():
 
 
     df_container = run_sim_workflow(method_list=method_list, data_directory=data_directory,
-                                    DG_list=DG_list, **simulation_kwargs)
+                                    SG_list=SG_list, DG_list=DG_list, **simulation_kwargs)
 
 if __name__ == '__main__':
     main()
