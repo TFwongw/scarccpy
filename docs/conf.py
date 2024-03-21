@@ -38,6 +38,6 @@ html_context = {
     'display_github': True,
     'github_user': 'TFwongw',
     'github_repo': 'scarccpy',
-    'github_version': 'main/docs/',
+    'github_version': 'main/',
 }
 
