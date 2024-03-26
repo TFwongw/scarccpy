@@ -6,16 +6,10 @@ from scarcc.utils import convert_arg_to_list
 from ..flux.flux_snapshot import set_GI_SP_as_MI
 
 def turn_to_normal_colname(colname):
+    """turn colname to normal colname"""
     colname = colname.split('_')
     new_colname = '_'.join([colname[0], 'Normal', colname[2]])
     return new_colname
-
-def convert_col_to_gene_inhibition(s):
-    if len(s.split('.')) <=2:
-        _, gcomb, _ = s.split('_')
-        return gcomb
-    _, gcomb, _, lv_pairs = s.split('_')
-    return gcomb + '_' + lv_pairs
 
 def get_biomass_df(file_path_list: Union[str, List]):
     """read biomass_df from file"""
@@ -147,6 +141,8 @@ def get_desired_cycle(biomass_df, log_step=5, scale_biomass_diff=0.1):
     return desired_cycle
 
 def convert_col_to_gene_inhibition(biomass_column):
+    """convert biomass column to gene inhibition"""
+    # TODO: add to gene handler class
     if len(biomass_column.split('.')) <=2:
         _, gcomb, _ = biomass_column.split('_')
         return gcomb
@@ -192,10 +188,6 @@ def get_end_BM(biomass_df):
     biomass['Total_BM'] = biomass.groupby('Gene_inhibition').Biomass.sum()
     end_biomass = set_GI_SP_as_MI(biomass).join(set_GI_SP_as_MI(add_to_end_biomass(biomass)))
     binned_col = get_species_frac_binned(end_biomass)
-    # return end_biomass, binned_col
-
-    # end_biomass = end_biomass.merge(binned_col, left_index=True, right_index=True, suffixes=('', '_binned'))
-    # end_biomass['BM_consortia_frac_binned'] = end_biomass['BM_consortia_frac_binned'].cat.add_categories(['No growth'])
     end_biomass['BM_consortia_frac_binned'] = list(binned_col)
     end_biomass.loc[end_biomass.Biomass<1.01e-8,'BM_consortia_frac_binned'] = 'No growth'
     return end_biomass

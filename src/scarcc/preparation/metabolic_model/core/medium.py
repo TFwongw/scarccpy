@@ -1,3 +1,5 @@
+"""Create medium for the model for generating solution from FBA and MonocultureAlphaSearch"""
+
 from collections.abc import Iterable
 from typing import Union, List
 
@@ -5,7 +7,7 @@ def initialize_medium():
     """Returns a dictionary of default medium conditions for the model.
     Medium is without carbon source.
     10 as default value for COMETS maximum uptake rate"""
-    nutrient_medium = {'EX_ca2_e': 10, 
+    nutrient_medium = {'EX_ca2_e': 10,
                         'EX_cl_e': 10,
                         'EX_cobalt2_e': 10,
                         'EX_cu2_e': 10,
@@ -31,6 +33,7 @@ def change_medium(model: "cobra.Model", metabolite: Union["Metabolite" , List['M
     model: cobra.Model
     metabolite: cobra.Metabolite
     value: float
+    return_medium: bool
     
     Returns
     -------

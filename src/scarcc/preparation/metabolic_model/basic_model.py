@@ -8,14 +8,9 @@ import os
 
 import cobra
 
-
-# from .core.medium import initialize_medium, change_medium
-# from .core.component import get_all_components
-# from .core.flux_weighting import weight_carbon_byproduct, rename_ac_in_bulk
-
-from .core import (initialize_medium, change_medium,
-                   get_all_components,
-                   weight_carbon_byproduct, rename_ac_in_bulk)
+from .core import (
+    initialize_medium, change_medium, get_all_components,
+    weight_carbon_byproduct, rename_ac_in_bulk)
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +21,6 @@ class BasicModel:
     Args:
         E0: cobra.Model
         S0: cobra.Model
-        all_components: dict, Storing all components(Gene, Metabolite, Reaction) associated with metabolic networks
         E_carbon_byproduct_reuptake: Boolean, default True, allow for reuptake of carbon byproduct in E0
                                         pFBA galactose reuptake adds noise in growth rate estimation
         flux_weighting: Boolean, default None, flux weighting lower relative importance in cost of acetate secretion in pFBA
@@ -35,11 +29,28 @@ class BasicModel:
         gal_scale: float, default 3, flux weight 3
         c_limiting_conc: float, default 2, carbon limiting as proxy for coculture uptake rate
         met_limiting_conc: float, default 10, metabolite unlimited for E0        
-
-    Returns:
-        _type_: _description_
-    """
     
+    Attributes:
+        all_componentsP: dict
+        A structured dictionary that stores all the components (Gene, Metabolite, Reaction) associated with the metabolic network for each model. 
+        The structure of the dictionary is as follows:
+            {
+                'Species': {
+                    'Gene': {set of gene_ids for the model}, 
+                    'Metabolite': {set of metabolite_ids for the model}, 
+                    'Reaction': {set of reaction_ids for the model}
+                }
+            }
+            
+    Example:
+    --------- 
+    >>> from scarcc.preparation.metabolic_model import BasicModel
+    >>> model_directory = find_directory('models', os.path.abspath(''))
+    >>> E0, S0, all_components = BasicModel(flux_weighting=True,
+    ...                                     ac_scale=10,  # Optional
+    ...                                     gal_scale=1/3,  # Optional
+    ...                                     model_directory=model_directory).load_ES_models()
+    """
     E0: cobra.Model = None
     S0: cobra.Model = None
     model_directory: str = '../models'

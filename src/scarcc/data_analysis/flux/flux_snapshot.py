@@ -13,7 +13,7 @@ def get_rcts_list(model, gcomb_list):
         rcts_set = rcts_set | set(gene_rcts)
     return rcts_list
 
-def adjust_flux_df(model, df, gene_combo: list, alpha_table:pd.DataFrame): # model for query of reactions
+def adjust_flux_df(model, df, gene_combo: str, alpha_table:pd.DataFrame): # model for query of reactions
     """Adjust flux df with alpha value for each target gene in the gene combination.
     
     Adjustment for larger alpha come first and scale only once

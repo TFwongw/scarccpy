@@ -1,7 +1,8 @@
+"""Checkerboard workflow for running simulation with checkerboard alpha table"""
+
 import os
 import logging
 import pandas as pd
-from typing import Dict
 import concurrent.futures
 import ast
 
@@ -10,7 +11,8 @@ from .simulation_workflow import get_simulation_output, unpack_future_result_per
 
 logger = logging.getLogger(__name__)
 
-def convert_checker_alpha_table_to_dict(alpha_table_checkerboard: pd.DataFrame): # alpha table keys as append ''.join(['_'+ str(ele) for ele in _i_j as suffix 
+def convert_checker_alpha_table_to_dict(alpha_table_checkerboard: pd.DataFrame): 
+    """Convert checkerboard alpha table to dictionary using lv_pairs as key"""
     d= dict()
     if isinstance(alpha_table_checkerboard.lv_pairs.iloc[0], str):
         alpha_table_checkerboard['lv_pairs'] = alpha_table_checkerboard.lv_pairs.apply(ast.literal_eval)
@@ -18,15 +20,24 @@ def convert_checker_alpha_table_to_dict(alpha_table_checkerboard: pd.DataFrame):
         d['_'+'.'.join(map(str, lv_pairs))] = alpha_table_checkerboard.query('lv_pairs == @lv_pairs')
     return d
 
-def replace_i_to_suffix(colname: str, sub_alpha_dict: Dict[str, pd.DataFrame]):
-    i = colname.split('_')[-1]
-    # print(i, sub_alpha_dict[i])
-    return colname.replace(i, sub_alpha_dict[i]['suffix'])
-
 # TODO: import from SG data that already ran/ BUT IF result has only levels are recorded
-# handle only one checkerboard consist of 2 target genes
-def run_checkerboard_workflow(alpha_table: pd.DataFrame, data_directory: str,  max_cpus=12,**kwargs):
+def run_checkerboard_workflow(alpha_table: pd.DataFrame, data_directory: str,  max_cpus=12, additive_threshold=0.05, **kwargs):
+    """Run simulation with checkerboard alpha table for 2 target genes
+    
+    Parameters
+    ----------
+    alpha_table : pd.DataFrame
+        Alpha table with checkerboard pattern
+    data_directory : str
+        Directory to save the simulation results
+    max_cpus : int
+        Maximum number of cpus to use for simulation
+    additive_threshold : float
+        Threshold for drug combination response to be considered non-additive    
+    """
+
     def added_Normal_cols(biomass_df):
+        """Append Normal columns to the biomass data frame as control row"""
         def rename_to_Normal(colname):
             splitted = colname.split('_')
             splitted[1] = 'Normal'
@@ -66,7 +77,7 @@ def run_checkerboard_workflow(alpha_table: pd.DataFrame, data_directory: str,  m
     df_container = {k: concat_result(sub_container) for k, sub_container in df_container.items()} # column-wise for biomass, row-wise for flux data frame concatenation
     df_container[method, 'SG']['biomass'] = added_Normal_cols(df_container[method, 'SG']['biomass'])
     
-    mdf = MethodDataFiller(df_container, data_directory)
+    mdf = MethodDataFiller(df_container, data_directory, additive_threshold)
     mdf.fill_container()
     mdf.write_to_csv()
     return df_container

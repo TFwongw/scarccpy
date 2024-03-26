@@ -1,3 +1,6 @@
+"""method 2 of generating alpha table, still under development
+    For more information, refer to Harcombe Lab repo"""
+
 import os
 import json
 import numpy as np

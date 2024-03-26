@@ -1,9 +1,12 @@
+"""Module for alpha finder base class"""
+
 from dataclasses import dataclass
-import pandas as pd
 from typing import List
 from abc import ABC, abstractmethod
 from typing import Union
 import logging
+
+import cobra
 
 logger = logging.getLogger(__name__)
 

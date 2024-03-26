@@ -5,7 +5,9 @@ import logging
 
 from scarcc.preparation.find_directory import find_directory
 from scarcc.preparation.metabolic_model import BasicModel
+from scarcc.sim_engine.simulation_workflow import run_sim_workflow
 
+# Uncomment line for set param maximum number of cycle for full simulation
 def main():
     logging.basicConfig(filename='scarcc_simulation.log',
                         level=logging.DEBUG,
@@ -28,20 +30,19 @@ def main():
     p.set_param("timeStep", 1)
     p.set_param('writeFluxLog', True)
 
-    from scarcc.sim_engine.simulation_workflow import run_sim_workflow
-
     SG_list = ['folA', 'folP'] # Optional, if running on the same set or subset of single gene with biomass, flux data exists in Data
     DG_list = [['folA', 'folP']] # Optional, Example: [['folA', 'folP'], ['folC', 'folP'], ['folA', 'folC']]
     method_list = ['m1']
+    
     simulation_kwargs = {
         'E0': E0,
         'S0': S0,
         'base': sim_chamber_directory,
         'p': p}
 
-
     df_container = run_sim_workflow(method_list=method_list, data_directory=data_directory,
-                                    SG_list=SG_list, DG_list=DG_list, **simulation_kwargs)
+                                    # SG_list=SG_list, DG_list=DG_list, **simulation_kwargs)
+                                    DG_list=DG_list, **simulation_kwargs)
 
 if __name__ == '__main__':
     main()

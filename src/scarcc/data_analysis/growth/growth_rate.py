@@ -1,18 +1,20 @@
-# accepts biomass as data frame then returns growth rate, normalized growth rate, classification of gene  combination effect
-import os
+"""This module contains functions to calculate growth rate from biomass data.
+
+Note: using numpy for estimating growth rate instead of scipy curve_fit
+"""
+
 import numpy as np
 import pandas as pd
-import itertools
 
 from scipy.optimize import curve_fit
 from matplotlib import pyplot as plt
 
-from scarcc.data_analysis import convert_po_col
-
 def loglinear(x, a, b):
+    """loglinear function for fitting growth rate"""
     return a*np.exp(b*(x))
 
 def truncate_max_biomass(biomas_s):
+    """truncate biomass series to 90% of the maximum biomass"""
     fit_col = biomas_s.dropna()
     cycles_to_fit = fit_col<fit_col.iloc[-1]*.9
     if any(cycles_to_fit.values) == False:
@@ -28,6 +30,7 @@ def get_growth_rate(biomass_s, fit=False, plot_fitted=False, plot_og=False):
         return y_fit
     
     def plot_curves(plot_fitted, plot_og=True, **kwargs):
+        """For goodness of fit checking"""
         popt, pcov = curve_fit(loglinear, x, y, p0=[est_initial_pop, np_gr])
 
         if plot_og:
@@ -48,6 +51,7 @@ def get_growth_rate(biomass_s, fit=False, plot_fitted=False, plot_og=False):
     return np_gr
 
 def get_growth_rate_df(Biomass_df):
+    """get growth rate for each column in Biomass_df"""
     def attach_lv_to_gene_inhibition(col_elements):
         Species, Gene_inhibition, Culture, lv_pair = col_elements
         return (Species, '_'.join([Gene_inhibition, lv_pair]), Culture)

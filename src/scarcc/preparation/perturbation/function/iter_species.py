@@ -1,6 +1,4 @@
-"""iterate items to pass into function
-Can be used to iterate models and the corresponding alpha values
-extra arguments can be passed to the function
+"""Change to use map, iter_species unnecessary
 """ 
 
 def iter_species(models,f,*args,**kwargs) -> list: 

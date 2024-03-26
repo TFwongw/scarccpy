@@ -1,3 +1,5 @@
+"""This module contains the class for simulation configuration."""
+
 from typing import List, Dict
 from functools import partial
 from dataclasses import dataclass
@@ -10,6 +12,40 @@ logger = logging.getLogger(__name__)
 
 @dataclass(kw_only=True)
 class LayoutConfig: # E0 S0 with modified
+    """Configuration for layout object passed to construct comets.sim object
+    
+    Attributes
+    ----------
+    E0 : cobra.Model
+    S0 : cobra.Model
+    E_model : comets.model
+    S_model : comets.model
+    carbon_source_val : float
+        quantity of carbon source, default is 0.1
+    base_nutrients : List
+        list of base nutrients, default is:
+            ["ca2_e", "cl_e", "cobalt2_e", "cu2_e","fe2_e", "fe3_e", "k_e", "mg2_e",
+            "mn2_e", "mobd_e", "ni2_e", "o2_e", "pi_e", "so4_e", "zn2_e", "nh4_e"]
+    nutrients_val : int
+        quantity of nutrients, default is 100, unlimited
+    co : bool
+        whether to run co-culture simulation, default is True
+    mono : bool
+        whether to run mono-culture simulation, default is True
+    mono_E : bool
+        whether to run mono-culture simulation for E0, default is True
+    mono_S : bool
+        whether to run mono-culture simulation for S0, default is True
+    Smono_carbon_source : str
+        carbon source for S0 mono-culture, default is 'bulk_ac_e' if 'EX_bulk_ac_e' in S0.reactions else 'ac_e'
+    carbon_source : Dict[str, str]
+        carbon source for each culture, default is:
+            {'co': 'lcts_e', 'mono_E': 'lcts_e', 'mono_S': Smono_carbon_source}
+    initial_pop : float
+        initial population, default is 1e-8
+    obj_style : str
+        objective style, default is 'MAX_OBJECTIVE_MIN_TOTAL', using pFBA
+    """
     # medium related
     E0: "cobra.Model"
     S0: "cobra.Model"
@@ -41,22 +77,42 @@ class LayoutConfig: # E0 S0 with modified
                 "mn2_e", "mobd_e", "ni2_e", "o2_e", "pi_e", "so4_e", "zn2_e", "nh4_e"]
         if self.carbon_source is None:
             self.carbon_source = {'co': 'lcts_e', 'mono_E': 'lcts_e', 'mono_S': self.Smono_carbon_source}
-        # if self.E_model is None or self.S_model is None: # ? after modify Sij
-        #     self.set_comets_model()
     
-    def set_comets_model(self, E0, S0): # ? Use E0, S0 within context manager?
+    def set_comets_model(self, E0, S0):
+        """Set comets model for E0 and S0.
+        
+        Circumvent risk exit context manager for using self.E0, self.S0
+        """
         def create_comets_model(model):
             comets_model = c.model(model)
             comets_model.open_exchanges()
             comets_model.initial_pop = [0, 0, self.initial_pop]
             comets_model.obj_style = self.obj_style
             return comets_model
-        # self.E_model, self.S_model = iter_species([self.E0, self.S0], create_comets_model)
         self.E_model, self.S_model = [create_comets_model(model) for model in [E0, S0]]
         return self.E_model, self.S_model
 
     def create_common_media(self, species: List['cobra.Model'], carbon_source: str, carbon_source_val: float = None,
                             additonal_nutrients: List[str] = [''], additonal_nutrients_val: List[int] = [100]):
+        """Create common media for species.
+
+        Parameters
+        ----------
+        species : List[cobra.Model]
+            list of species
+        carbon_source : str
+            carbon source
+        carbon_source_val : float
+            quantity of carbon source, default is None
+        additonal_nutrients : List[str]
+            list of additional nutrients, default is ['']
+        additonal_nutrients_val : List[int]
+            list of additional nutrients value, default is [100]
+
+        Returns
+        -------
+        comets.layout
+        """
         additonal_nutrients, additonal_nutrients_val = convert_arg_to_list(additonal_nutrients), convert_arg_to_list(additonal_nutrients_val)
         l = c.layout(species)
         for nutrient in self.base_nutrients:
@@ -74,6 +130,7 @@ class LayoutConfig: # E0 S0 with modified
         return l
 
     def set_layout_object(self):
+        """Set layout object for co-culture, mono-culture E0 and mono-culture S0."""
         partial_create_common_media = partial(self.create_common_media, carbon_source_val=self.carbon_source_val)
         co_layout = partial_create_common_media([self.E_model, self.S_model], carbon_source=self.carbon_source['co']) if self.co else None
         E0_layout = partial_create_common_media([self.E_model], carbon_source=self.carbon_source['mono_E'], 

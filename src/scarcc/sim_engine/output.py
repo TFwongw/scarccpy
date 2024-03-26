@@ -157,7 +157,7 @@ class MethodDataFiller:
     """
     # TODO: handler for not supplying SG biomass, OR handle for the first construction of container dict
     # TODO: if DG none then no cal any for DG OR ensure both SG and DG exist
-    def __init__(self, df_container, data_directory, additive_threshold): #? make a base accept only sg, dg
+    def __init__(self, df_container, data_directory, additive_threshold=0.05): #? make a base accept only sg, dg
         self.df_container = df_container
         self.data_directory = data_directory
         self.methods = set([key[0] for key in df_container.keys()]) # first element of tuple is method

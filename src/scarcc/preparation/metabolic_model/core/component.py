@@ -1,4 +1,5 @@
-"""This module contains functions for retriving components of a model"""
+"""This module contains functions for retrieving components of a model"""
+
 import re
 import cobra
 from typing import Union, List, Dict
@@ -122,8 +123,8 @@ def get_links_component(model: "Model", query: Union["Metabolite" , "Reaction", 
         [component1, component2, ...] or [component1.id, component2.id, ...]
     """
 
-    def get_result(model, query, all_components):        
-        # query for single component
+    def get_result(model, query, all_components):
+        """query for single component"""
         query = get_component(model, query, all_components)
         if isinstance(query, cobra.Reaction):
             result = set(query.metabolites)

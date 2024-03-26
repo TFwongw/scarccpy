@@ -1,4 +1,5 @@
 """Search for IC values by percentage of biomass production in FBA under perturbation"""
+
 import os
 from dataclasses import dataclass, field
 import logging
@@ -78,6 +79,7 @@ class MonocultureAlphaFinder(AlphaFinderConfig):
                                         'target_abs_diff' : target_abs_diff
                                     }
                                 }}}}
+        Only used in checkerboard search as record keeping in multiple runs with different target biomass supplied sequentially
     opt_df : pd.DataFrame
         summary data frame for alpha, biomass, and fluxes
     

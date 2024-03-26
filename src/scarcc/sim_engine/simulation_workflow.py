@@ -1,3 +1,5 @@
+"""Module for running simulation workflow for list of double gene combinations with checkerboard alpha table"""
+
 import os
 import logging
 import pandas as pd
