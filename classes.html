@@ -47,6 +47,25 @@
             load_ES_models()
             set_ES_medium()
           }
+          class CheckerboardAlphaFinder {
+            alpha_table : NoneType
+            checker_lvs : DataFrame
+            data_directory : NoneType
+            maf_kwargs : dict
+            n_levels
+            response_record : Dict, NoneType
+            result_dict : dict
+            species_list : list
+            target_gene_list : list
+            construct_checker_lvs()
+            fill_dict(model, current_gene, nbiomass_x)
+            get_checkerboard_alpha_table()
+            get_new_response_record()
+            match_alpha_lvs(current_gene)
+            process_record_in_gene(current_gene)
+            set_default_kwargs(key, default_value)
+            set_response_record_format(response_record, normalized_growth)
+          }
           class CocultureAlphaFinder {
             E0
             S0
@@ -96,46 +115,27 @@
             get_alpha_use()
             out_fun()
           }
-          class CombinedAntibioticsSimulation {
-            alpha_table : str
-            base : Optional[str]
-            biomass_df : DataFrame
-            biomass_flux_dict : dict
-            checker_suffix : Optional[str]
-            co_sim_object : str
-            current_gene : str
-            flux_df
-            ko : bool
-            mono_sim_object_list : List['comets.simulation']
-            p : str
-            return_sim : bool
-            sim_object_list : List['comets.simulation']
-            working_dir : Optional[str]
-            cleanup()
-            get_BM_df()
+          class DrugCombinationEffectClassification {
+            additive_threshold : float
+            dfs_in_DG_layer
+            dfs_in_SG_layer
+            pure_dg_gr : NoneType
+            get_gr_df()
+            get_normalized_gr_df()
           }
-          class FluxCompare {
-            DG_cycle
-            DG_list : Optional[List]
-            E0 : Model
-            S0 : Model
-            SG_cycle
-            SG_list : set
-            XG_df_list : list
-            alpha_table : DataFrame
-            count : int
-            culture_options : str
-            desired_cycle : DataFrame
-            desired_cycle_col : str
-            file_list : NoneType
-            flux_compare_df : DataFrame
-            flux_compare_dict : Dict
-            flux_dict : Dict
-            is_checkerboard : bool
-            item_options : str
-            get_flux_compare_df()
-            get_flux_dict_per_culture_item(model, sub_flux_dict, culture_item, desired_cycle, log_step, high_pass_cycle)
-            retrive_specific_culture()
+          class GeneFormatHandler {
+            DG : NoneType
+            SG : NoneType, tuple
+            XG : NoneType
+            first_gene : NoneType
+            gene_str
+            is_DG : bool
+            is_Normal
+            is_checkerboard_format : NoneType, bool
+            second_gene : NoneType
+            classify_XG()
+            set_fs_gene()
+            trim(gene_str)
           }
           class LayoutConfig {
             E0 : str
@@ -157,21 +157,33 @@
             nutrients_val : int
             obj_style : str
             create_common_media(species: List['cobra.Model'], carbon_source: str, carbon_source_val: float, additonal_nutrients: List[str], additonal_nutrients_val: List[int])
-            set_comets_model()
+            set_comets_model(E0, S0)
             set_layout_object()
           }
+          class MethodDataFiller {
+            XGs : set
+            additive_threshold : float
+            data_directory
+            df_container
+            methods : set
+            fill_container()
+            write_to_csv()
+          }
           class MonocultureAlphaFinder {
-            acceptance_threshold_lower : float
+            acceptance_threshold_lower : int
             acceptance_threshold_upper : float
             exp_leap : float
             found_alpha
             is_monoculture : bool
             is_new_ub
             model : str
+            net_flux
             norm_obj_val : Optional[float]
             opt_df : DataFrame
             response_record : Optional[Dict]
             search_alpha : float
+            target_normalized_biomass : float
+            target_obj_val : float
             trace_obj_val : List
             eval_alpha_fun()
             fill_response_record(obj_val, is_lowest_abs_diff)
@@ -188,9 +200,28 @@
             sim_object : str
             species_list
           }
+          class SimulateCombinedAntibiotics {
+            alpha_table : DataFrame
+            base : Optional[str]
+            biomass_df : DataFrame
+            checker_suffix : str
+            co_sim_object : str
+            current_gene : str
+            flux_df : NoneType
+            ko : bool
+            mono_sim_object_list : List['comets.simulation']
+            p : str
+            return_sim : bool
+            sim_object_list : List['comets.simulation']
+            working_dir : Optional[str]
+            checker_adjustment()
+            cleanup()
+            get_BM_df()
+          }
           CocultureAlphaFinder --|> AlphaFinderConfig
           MonocultureAlphaFinder --|> AlphaFinderConfig
-          CombinedAntibioticsSimulation --|> LayoutConfig
+          SimulateCombinedAntibiotics --|> LayoutConfig
+          MonocultureAlphaFinder --* CheckerboardAlphaFinder : response_record
   
        </div>
   </body>

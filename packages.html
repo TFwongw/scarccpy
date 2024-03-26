@@ -8,14 +8,6 @@
           }
           class data_analysis {
           }
-          class biomass {
-          }
-          class _pathway_summary {
-          }
-          class growth_summary {
-          }
-          class plot_growth_curve {
-          }
           class drug_combination_response {
           }
           class classification {
@@ -29,6 +21,16 @@
           class flux_ratio_analysis {
           }
           class flux_snapshot {
+          }
+          class growth {
+          }
+          class _pathway_summary {
+          }
+          class growth_rate {
+          }
+          class growth_summary {
+          }
+          class plot_growth_curve {
           }
           class plot {
           }
@@ -62,6 +64,8 @@
           }
           class alpha_finder {
           }
+          class checkerboard {
+          }
           class coculture {
           }
           class monoculture {
@@ -74,34 +78,41 @@
           }
           class target_gene {
           }
-          class process_double_gene {
+          class gene_format_handler {
           }
           class sim_engine {
           }
-          class data_processing {
+          class checkerboard_workflow {
           }
-          class preprocess_flux {
+          class flux_extraction {
           }
-          class result_processing {
+          class output {
           }
           class simulation_configuration {
           }
           class simulation_workflow {
           }
-          class util {
+          class utils {
           }
           class util {
           }
-          data_analysis --> growth_summary
           data_analysis --> classification
           data_analysis --> carbon_allocation
           data_analysis --> flux_ratio_analysis
-          data_analysis --> flux_snapshot
+          data_analysis --> growth_summary
           data_analysis --> heatmap
           data_analysis --> kde
           data_analysis --> legend
           data_analysis --> scatter
+          carbon_allocation --> data_analysis
+          carbon_allocation --> metabolic_model
           flux_ratio_analysis --> flux_snapshot
+          flux_ratio_analysis --> metabolic_model
+          flux_snapshot --> metabolic_model
+          _pathway_summary --> metabolic_model
+          _pathway_summary --> utils
+          growth_summary --> utils
+          scatter --> utils
           preparation --> alpha_finder
           preparation --> coculture
           preparation --> monoculture
@@ -111,17 +122,37 @@
           core --> component
           core --> flux_weighting
           core --> medium
+          component --> utils
           perturbation --> iter_species
           perturbation --> stoichiometry_scaling
           alpha_finder --> coculture
           alpha_finder --> monoculture
+          checkerboard --> monoculture
+          coculture --> growth_summary
           coculture --> alpha_finder
+          coculture --> utils
+          monoculture --> perturbation
           monoculture --> alpha_finder
+          monoculture --> utils
           function --> iter_species
           function --> stoichiometry_scaling
-          simulation_workflow --> result_processing
+          stoichiometry_scaling --> metabolic_model
+          stoichiometry_scaling --> utils
+          checkerboard_workflow --> output
+          checkerboard_workflow --> simulation_workflow
+          flux_extraction --> data_analysis
+          flux_extraction --> flux_snapshot
+          flux_extraction --> utils
+          output --> data_analysis
+          output --> growth_rate
+          output --> gene_format_handler
+          simulation_configuration --> utils
+          simulation_workflow --> perturbation
+          simulation_workflow --> flux_extraction
+          simulation_workflow --> output
           simulation_workflow --> simulation_configuration
-          util --> util
+          simulation_workflow --> utils
+          utils --> util
   
        </div>
   </body>

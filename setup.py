@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='scarcc',
-    version='0.1.0',
+    version='0.1.1',
     url='https://github.com/TFwongw/scarccpy',
     author='Thomas Wong',
     author_email='wong0755@umn.edu',
