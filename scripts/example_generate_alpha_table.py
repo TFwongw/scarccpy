@@ -11,7 +11,7 @@ def main():
     data_directory = find_directory('Data', os.path.abspath(''))
 
     # initialize model
-    E0, S0, all_components = BasicModel(model_directory=model_directory, flux_weighting=False).load_ES_models()
+    E0, S0, all_components = BasicModel(model_directory=model_directory, flux_weighting=True).load_ES_models()
     DG_list = get_DG_list(os.path.join(data_directory, 'GeneCombos.csv'), n_combos=None)
     SG_list = get_SG_list(DG_list)
 

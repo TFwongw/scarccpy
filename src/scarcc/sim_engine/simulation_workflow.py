@@ -5,7 +5,6 @@ import logging
 import pandas as pd
 from typing import List
 from dataclasses import dataclass, field
-# from collections import defaultdict
 import itertools
 import concurrent.futures
 import cometspy as c
@@ -52,6 +51,10 @@ class SimulateCombinedAntibiotics(LayoutConfig):
     co_sim_object: 'comets.simulation' = field(default_factory=list)
     mono_sim_object_list: List['comets.simulation'] = field(default_factory=list)
     sim_object_list: List['comets.simulation'] = field(default_factory=list)
+    
+    # arguments required for saving raw flux data
+    save_raw_flux: bool = False
+    data_directory: str = None
 
     def __post_init__(self):
         super().__post_init__()
@@ -102,7 +105,8 @@ class SimulateCombinedAntibiotics(LayoutConfig):
 
         self.biomass_df, self.flux_df = extract_biomass_flux_df(
             self.E0, self.S0, self.sim_object_list,
-            alpha_table=self.alpha_table, current_gene=self.current_gene)
+            alpha_table=self.alpha_table, current_gene=self.current_gene,
+            save_raw_flux=self.save_raw_flux, data_directory=self.data_directory)
         if self.checker_suffix:
             self.checker_adjustment()
         self.cleanup()
@@ -171,6 +175,7 @@ def get_simulation_output(**kwargs):
     return simulation.get_BM_df()
 
 def run_sim_workflow(method_list, data_directory, SG_list=None, DG_list=None, generate_SG_list=False, max_cpus=12, **kwargs):
+    kwargs['data_directory'] = data_directory
     SG_list, DG_list = check_SG_DG_format(SG_list, DG_list, generate_SG_list)
     available_cpus = min(os.cpu_count(), max_cpus)
     method_list = [ele.replace('alpha_table_', '') for ele in method_list]

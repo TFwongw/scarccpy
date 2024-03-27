@@ -167,7 +167,6 @@ class AlphaFinderConfig(ABC):
         -------
         output of out_fun defined in child class
         """
-        logger.debug(self.current_gene, self.ko_intercepted)
         def eval_continue():
             # see if conditions for stopping are met
             if self.is_monoculture: # as culture_flag

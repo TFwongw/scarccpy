@@ -13,4 +13,4 @@ unset PYTHONPATH
 unset PYTHONHOME
 unset PYTHONSTARTUP
 
-python example_sim_COMETS.py
+python generate_and_run.py

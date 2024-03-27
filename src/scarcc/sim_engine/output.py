@@ -39,10 +39,11 @@ def add_additive_and_drug_comb_response(df, additive_threshold=0.05): # after no
     """
     for sp_cul in itertools.product(['E0', 'S0'], ['coculture', 'monoculture']):
         sp_cul = '_'.join(sp_cul)
-        df[f'Predicted_additive_effect_{sp_cul}'] = df[f'{sp_cul}_First_gene'] * df[f'{sp_cul}_Second_gene']
-        # df[f'op_diff_{sp_cul}'] = df[sp_cul] - df[f'Predicted_additive_effect_{sp_cul}'] # TODO: call convert_op_col
-        df[f'po_diff_{sp_cul}'] = df[f'Predicted_additive_effect_{sp_cul}'] - df[sp_cul] # predicted - observed
-        df[f'Drug_comb_effect_{sp_cul}'] = convert_po_col(df[f'po_diff_{sp_cul}'], additive_threshold=additive_threshold)
+        if f'{sp_cul}_First_gene' in df.columns:
+            df[f'Predicted_additive_effect_{sp_cul}'] = df[f'{sp_cul}_First_gene'] * df[f'{sp_cul}_Second_gene']
+            # df[f'op_diff_{sp_cul}'] = df[sp_cul] - df[f'Predicted_additive_effect_{sp_cul}'] # TODO: call convert_op_col
+            df[f'po_diff_{sp_cul}'] = df[f'Predicted_additive_effect_{sp_cul}'] - df[sp_cul] # predicted - observed
+            df[f'Drug_comb_effect_{sp_cul}'] = convert_po_col(df[f'po_diff_{sp_cul}'], additive_threshold=additive_threshold)
     return df
 
 def reorder_columns(df):
@@ -167,7 +168,10 @@ class MethodDataFiller:
     def fill_container(self):
         """Fill df_container with drug combination effect classification data frames for each method and XG in container dict."""
         for method in self.methods:
-            dcd = DrugCombinationEffectClassification(self.df_container[method, 'SG'], self.df_container[method, 'DG'], self.additive_threshold) # each key level are dict of dfs
+            dcd = DrugCombinationEffectClassification(
+                self.df_container.get((method, 'SG'), None),
+                self.df_container.get((method, 'DG'), None),
+                self.additive_threshold) # each key level are dict of dfs
             dcd.get_gr_df()
             dcd.get_normalized_gr_df()
         return self.df_container
